@@ -1,0 +1,196 @@
+<html><head><style>
+body {
+  background-color: black;
+}
+
+img {
+  position: fixed;
+  top:0;bottom:0;left:0;right:0;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+  overflow: auto;
+}
+
+.overlay {
+  position: fixed;
+  top:0;bottom:0;left:0;right:0;
+  opacity: 0;
+  color: red;
+  font-family: 'Helvetica', 'Arial', sans-serif;
+  font-size: 10em;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 5px;
+}
+
+.fade-in {
+  animation: fadeinout 2s linear forwards;
+}
+
+@keyframes fadeinout {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.info {
+  position: fixed;
+  top:0;bottom:0;right:0;
+  width: 25%;
+  max-height: 100%;
+
+  background-color:rgba(0,0,0,0.8);
+  color: white;
+  padding: 0.5rem;
+
+  font-family: 'Helvetica', 'Arial', sans-serif;
+  font-size: 1.3em;
+  line-height: 1.4;
+}
+
+.info .small {
+  font-size: 0.8em;
+  color: #BBB;
+}
+
+.none {
+  display: none;
+}
+</style>
+<script type="text/javascript"
+src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script>
+window.onload = function() {
+  var images = [],
+      rating = ["nope", "meh", "yep"],
+      imgElement = document.getElementById('image0'),
+      current = 0,
+      infoShown = false,
+      fadeIn = function(target) {
+        var i;
+        for(i = 0; i < rating.length; i++) {
+          if (rating[i] == target) {
+            $("." + rating[i]).addClass("fade-in");
+          } else {
+            $("." + rating[i]).removeClass("fade-in");
+          }
+        }
+      },
+      changeImage = function(incr) {
+        fadeIn("");
+        current = (current + incr + images.length) % images.length;
+        imgElement.src = images[current].src;
+        $(".i-date").text(images[current].id.substring(0,8));
+        $(".i-time").text(images[current].id.substring(9,13));
+        v = images[current].value;
+        $(".i-score").text((v == 0) ? "-1" : (v == 2) ? "+1" : "--");
+        rotateImage(0);
+        flagImage(0);
+      },
+      rotateImage = function(rotate) {
+        var v = images[current].angle;
+        v = (($.isNumeric(v) ? v : 0) + rotate) % 360;
+        images[current].angle = v;
+        $(".image0").css("-webkit-transform", "rotate("+v+"deg)")
+      },
+      flagImage = function(inc) {
+        var v = images[current].flag;
+        v = (($.isNumeric(v) ? v : 0) + inc) % 2;
+        images[current].flag = v;
+        $(".i-flag").text((v == 1) ? "FLAGGED" : "--");
+      },
+      starImage = function(inc) {
+        var v = images[current].value;
+        v = Math.max(Math.min(($.isNumeric(v) ? v : 1) + inc, 2), 0);
+        fadeIn(rating[v]);
+        images[current].value = v;
+        $(".i-score").text((v == 0) ? "-1" : (v == 2) ? "+1" : "--");
+      },
+      showInfo = function() {
+        if (infoShown) {
+          $(".info").addClass("none");
+        } else {
+          $(".info").removeClass("none");
+        }
+        infoShown = !infoShown;
+      },
+      submitResults = function() {
+        var i, j;
+        var res = [];
+        for (i = 0; i < images.length; i++) {
+          for (j = 0; j < images.length; j++) {
+            if (!$.isNumeric(images[j].value)) images[j].value = 1;
+            if (images[i].value <= images[j].value) continue;
+
+            res.push({image1:images[i].id,
+                      image2:images[j].id,
+                      result:images[i].value - images[j].value});
+          }
+        }
+        images = [];
+        imgElement.src = "/r/spinner.svg";
+
+        $.post("images", JSON.stringify(res))
+          .done(function(data) {
+            images = data;
+            current = 0;
+            changeImage(0);
+          });
+      };
+
+  document.onkeydown = function(event) {
+    switch(event.keyCode) {
+      case 37: /* Left */ changeImage(-1); break;
+      case 39: /* Right */ changeImage(1); break;
+      case 38: /* Up */ starImage(1); break;
+      case 40: /* Down */ starImage(-1); break;
+      case 13: /* Enter */ submitResults(); break;
+      case 68: /* (d)elete */ flagImage(1); break;
+      case 82: /* (r)otate */ rotateImage(90); break;
+      case 83: /* (s)how */ showInfo(); break;
+      default:
+        // window.alert(event.keyCode);
+    }
+    return;
+  };
+
+  submitResults();
+  return;
+}
+</script>
+</head>
+<body>
+  <img id="image0" class="image0" src="/r/spinner.svg" />
+  <div class="overlay yep">
+    <span id="x">+1</span>
+  </div>
+  <div class="overlay meh">
+    <span id="x">--</span>
+  </div>
+  <div class="overlay nope">
+    <span id="x">-1</span>
+  </div>
+  <div class="info none">
+    <br /><br />
+    <div><span class="i-date">June 1, 2015</span> &nbsp;
+         <span class="i-time small">14:15</span></div>
+
+    <br />
+    <div><span class="i-camera">Panasonic GF1</span></div>
+    <div><span class="i-dimension-x">4160</span> &times;
+         <span class="i-dimension-y">2350</span> &nbsp;
+         <span class="i-size small">8MB</span></div>
+    <div><span class="i-aperture small">f/2</span> &nbsp;
+         <span class="i-shutter small">1/30</span> &nbsp;
+         <span class="i-x small">2.64mm</span> &nbsp;
+         <span class="i-iso small">ISO400</span></div>
+
+    <br />
+    <div>Score: <span class="i-score">+1</span></div>
+    <div>Flag: <span class="i-flag">--</span></div>
+
+    <br />
+    <div>Notes: ....</div>
+  </div>
+</body>
+</html>

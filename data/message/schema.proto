@@ -1,0 +1,26 @@
+package message;
+
+message Photo {
+  optional string name = 1;
+}
+
+message PhotoSet {
+  repeated Photo photo = 1;
+}
+
+message Comparison {
+  optional string photo1 = 1;
+  optional string photo2 = 2;
+
+  // Should only be 1 or 2.
+  optional int32 score = 3;
+}
+
+message ComparisonSet {
+  optional int64 epoch = 1;
+  repeated Comparison comparison = 2;
+}
+
+message ComparisonSets {
+  repeated ComparisonSet set = 1;
+}
