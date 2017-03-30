@@ -1,2 +1,4 @@
 config/config.go
 tags
+err
+lint
