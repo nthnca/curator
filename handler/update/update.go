@@ -1,22 +1,21 @@
-package main
+package update
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
-	"time"
 
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/client"
-	"github.com/nthnca/curator/data/entity"
+	"github.com/nthnca/curator/data/gcs"
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util"
-	"github.com/nthnca/datastore"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/nthnca/datastore"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-func SavePhotoSet2(photos *message.PhotoSet) {
+func SavePhotoSet(photos *message.PhotoSet) {
 	clt, err := datastore.NewCloudClient(config.ProjectID)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
@@ -28,38 +27,16 @@ func SavePhotoSet2(photos *message.PhotoSet) {
 		return
 	}
 
-	key := clt.IncompleteKey("Tada")
-	entity := entity.Comparison{Proto: serialized}
+	key := clt.IncompleteKey("Tada", nil)
+	entity := client.Proto{Proto: serialized}
 
 	if _, err := clt.Put(key, &entity); err != nil {
 		log.Fatalf("Failed to save: %v", err)
 	}
 }
 
-func SavePhotoSet(count int, photos *message.PhotoSet) {
-	clt, err := datastore.NewCloudClient(config.ProjectID)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-
-	serialized, err := proto.Marshal(photos)
-	if err != nil {
-		// log.Infof("Marshaling failed: %v", err)
-		return
-	}
-
-	key := clt.NameKey("PhotoSet", fmt.Sprintf("%v", count))
-	entity := entity.Photo{Proto: serialized}
-
-	if _, err := clt.Put(key, &entity); err != nil {
-		log.Fatalf("Failed to save: %v", err)
-	}
-}
-
-func main() {
-	rand.Seed(time.Now().UnixNano())
-
-	photoList, err := client.LoadAllPhotos()
+func Handler(_ *kingpin.ParseContext) error {
+	photoList, err := gcs.List(config.StorageBucket)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
@@ -68,11 +45,11 @@ func main() {
 	comparisons, _ := client.LoadAllComparisons(clt)
 
 	photos := util.CalculateRankings(comparisons)
-	for _, e := range photoList {
-		if _, ok := photos[e.GetName()]; ok {
+	for k, _ := range photoList {
+		if _, ok := photos[k]; ok {
 			continue
 		}
-		photos[e.GetName()] = util.Data{Key: e.GetName(), Score: 1500}
+		photos[k] = util.Data{Key: k, Score: 1500}
 	}
 
 	var arr []util.Data
@@ -108,6 +85,7 @@ func main() {
 				Name: proto.String(arr[j].Key)})
 			j++
 		}
-		SavePhotoSet2(&msg)
+		SavePhotoSet(&msg)
 	}
+	return nil
 }

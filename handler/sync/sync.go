@@ -1,63 +1,19 @@
-package main
+package sync
 
 import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/nthnca/curator/config"
+	"github.com/nthnca/curator/data/disk"
+	"github.com/nthnca/curator/data/gcs"
 
-	"cloud.google.com/go/storage"
-	"golang.org/x/net/context"
-	"google.golang.org/api/iterator"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
-
-func ReadAllPhotos() (map[string]string, error) {
-	m := make(map[string]string)
-	visit := func(path string, fs os.FileInfo, err error) error {
-		base := filepath.Base(path)
-		key := strings.TrimSuffix(base, ".jpg")
-		if key == base {
-			return nil
-		}
-
-		m[key] = path
-		return nil
-	}
-
-	filepath.Walk(".", visit)
-	return m, nil
-}
-
-func ListBucket() (map[string]string, error) {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-
-	m := make(map[string]string)
-	bkt := client.Bucket(config.StorageBucket)
-	for it := bkt.Objects(ctx, nil); ; {
-		objAttrs, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			// TODO: Handle error.
-		}
-
-		m[strings.SplitN(objAttrs.Name, ".", 2)[0]] = objAttrs.Name
-	}
-	return m, nil
-}
 
 // Should implement this to speed this up
 // https://gobyexample.com/worker-pools
@@ -86,28 +42,13 @@ func StoreFile(path, key string) {
 	}
 }
 
-func main() {
-	rand.Seed(time.Now().UnixNano())
-
+func Handler(_ *kingpin.ParseContext) error {
 	var wg sync.WaitGroup
-
-	/*
-		var md map[string]string
-		wg.Add(1)
-		go func() {
-			photoList, _ := client.LoadAllPhotos()
-			for _, e := range photoList {
-				md[e.GetName()] = e.GetName()
-			}
-			log.Printf("Photos in datastore: %v\n", len(md))
-			wg.Done()
-		}()
-	*/
 
 	var mf map[string]string
 	wg.Add(1)
 	go func() {
-		mf, _ = ReadAllPhotos()
+		mf = disk.List(".")
 		log.Printf("Photos on disk: %v\n", len(mf))
 		wg.Done()
 	}()
@@ -115,7 +56,7 @@ func main() {
 	var mb map[string]string
 	wg.Add(1)
 	go func() {
-		mb, _ = ListBucket()
+		mb, _ = gcs.List(config.StorageBucket)
 		log.Printf("Photos in bucket: %v\n", len(mb))
 		wg.Done()
 	}()
@@ -142,4 +83,5 @@ func main() {
 		log.Printf("Key %v %v\n", key, path)
 		StoreFile(path, key)
 	}
+	return nil
 }

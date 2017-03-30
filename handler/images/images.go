@@ -60,10 +60,10 @@ func processImageResults(ctx context.Context, r *http.Request) {
 		return
 	}
 
-	test := message.ComparisonSet{
+	test := message.Comparison{
 		Epoch: proto.Int64(time.Now().Unix())}
 	for _, k := range ir {
-		test.Comparison = append(test.Comparison, &message.Comparison{
+		test.Entry = append(test.Entry, &message.ComparisonEntry{
 			Photo1: proto.String(k.Image1),
 			Photo2: proto.String(k.Image2),
 			Score:  proto.Int32(k.Result)})

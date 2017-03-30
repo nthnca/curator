@@ -30,7 +30,7 @@ func minint(a, b int) int {
 	return b
 }
 
-func CalculateRankings(comparisons []*message.Comparison) map[string]Data {
+func CalculateRankings(comparisons []*message.ComparisonEntry) map[string]Data {
 	rv := make(map[string]Data)
 
 	add := func(photo, opponent string, result int) {

@@ -1,14 +1,34 @@
 package message;
 
+message Fraction {
+  optional int32 numerator = 1;
+  optional int32 denominator = 2;
+}
+
 message Photo {
   optional string name = 1;
+  optional int32 bytes = 2;
+
+  message PhotoProperties {
+    optional int32 width = 1;
+    optional int32 height = 2;
+    optional int64 original_epoch = 3;
+    optional string make = 4;
+    optional string model = 5;
+    optional Fraction aperture = 6;
+    optional Fraction exposure_time = 7;
+    optional Fraction focal_length = 8;
+    optional int32 iso = 9;
+  }
+
+  optional PhotoProperties properties = 3;
 }
 
 message PhotoSet {
   repeated Photo photo = 1;
 }
 
-message Comparison {
+message ComparisonEntry {
   optional string photo1 = 1;
   optional string photo2 = 2;
 
@@ -16,11 +36,11 @@ message Comparison {
   optional int32 score = 3;
 }
 
-message ComparisonSet {
+message Comparison {
   optional int64 epoch = 1;
-  repeated Comparison comparison = 2;
+  repeated ComparisonEntry entry = 2;
 }
 
-message ComparisonSets {
-  repeated ComparisonSet set = 1;
+message ComparisonSet {
+  repeated Comparison comparison = 1;
 }

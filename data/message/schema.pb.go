@@ -9,11 +9,12 @@ It is generated from these files:
 	schema.proto
 
 It has these top-level messages:
+	Fraction
 	Photo
 	PhotoSet
+	ComparisonEntry
 	Comparison
 	ComparisonSet
-	ComparisonSets
 */
 package message
 
@@ -32,21 +33,143 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type Fraction struct {
+	Numerator        *int32 `protobuf:"varint,1,opt,name=numerator" json:"numerator,omitempty"`
+	Denominator      *int32 `protobuf:"varint,2,opt,name=denominator" json:"denominator,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *Fraction) Reset()                    { *m = Fraction{} }
+func (m *Fraction) String() string            { return proto.CompactTextString(m) }
+func (*Fraction) ProtoMessage()               {}
+func (*Fraction) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+func (m *Fraction) GetNumerator() int32 {
+	if m != nil && m.Numerator != nil {
+		return *m.Numerator
+	}
+	return 0
+}
+
+func (m *Fraction) GetDenominator() int32 {
+	if m != nil && m.Denominator != nil {
+		return *m.Denominator
+	}
+	return 0
+}
+
 type Photo struct {
-	Name             *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Name             *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Bytes            *int32                 `protobuf:"varint,2,opt,name=bytes" json:"bytes,omitempty"`
+	Properties       *Photo_PhotoProperties `protobuf:"bytes,3,opt,name=properties" json:"properties,omitempty"`
+	XXX_unrecognized []byte                 `json:"-"`
 }
 
 func (m *Photo) Reset()                    { *m = Photo{} }
 func (m *Photo) String() string            { return proto.CompactTextString(m) }
 func (*Photo) ProtoMessage()               {}
-func (*Photo) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*Photo) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *Photo) GetName() string {
 	if m != nil && m.Name != nil {
 		return *m.Name
 	}
 	return ""
+}
+
+func (m *Photo) GetBytes() int32 {
+	if m != nil && m.Bytes != nil {
+		return *m.Bytes
+	}
+	return 0
+}
+
+func (m *Photo) GetProperties() *Photo_PhotoProperties {
+	if m != nil {
+		return m.Properties
+	}
+	return nil
+}
+
+type Photo_PhotoProperties struct {
+	Width            *int32    `protobuf:"varint,1,opt,name=width" json:"width,omitempty"`
+	Height           *int32    `protobuf:"varint,2,opt,name=height" json:"height,omitempty"`
+	OriginalEpoch    *int64    `protobuf:"varint,3,opt,name=original_epoch" json:"original_epoch,omitempty"`
+	Make             *string   `protobuf:"bytes,4,opt,name=make" json:"make,omitempty"`
+	Model            *string   `protobuf:"bytes,5,opt,name=model" json:"model,omitempty"`
+	Aperture         *Fraction `protobuf:"bytes,6,opt,name=aperture" json:"aperture,omitempty"`
+	ExposureTime     *Fraction `protobuf:"bytes,7,opt,name=exposure_time" json:"exposure_time,omitempty"`
+	FocalLength      *Fraction `protobuf:"bytes,8,opt,name=focal_length" json:"focal_length,omitempty"`
+	Iso              *int32    `protobuf:"varint,9,opt,name=iso" json:"iso,omitempty"`
+	XXX_unrecognized []byte    `json:"-"`
+}
+
+func (m *Photo_PhotoProperties) Reset()                    { *m = Photo_PhotoProperties{} }
+func (m *Photo_PhotoProperties) String() string            { return proto.CompactTextString(m) }
+func (*Photo_PhotoProperties) ProtoMessage()               {}
+func (*Photo_PhotoProperties) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0} }
+
+func (m *Photo_PhotoProperties) GetWidth() int32 {
+	if m != nil && m.Width != nil {
+		return *m.Width
+	}
+	return 0
+}
+
+func (m *Photo_PhotoProperties) GetHeight() int32 {
+	if m != nil && m.Height != nil {
+		return *m.Height
+	}
+	return 0
+}
+
+func (m *Photo_PhotoProperties) GetOriginalEpoch() int64 {
+	if m != nil && m.OriginalEpoch != nil {
+		return *m.OriginalEpoch
+	}
+	return 0
+}
+
+func (m *Photo_PhotoProperties) GetMake() string {
+	if m != nil && m.Make != nil {
+		return *m.Make
+	}
+	return ""
+}
+
+func (m *Photo_PhotoProperties) GetModel() string {
+	if m != nil && m.Model != nil {
+		return *m.Model
+	}
+	return ""
+}
+
+func (m *Photo_PhotoProperties) GetAperture() *Fraction {
+	if m != nil {
+		return m.Aperture
+	}
+	return nil
+}
+
+func (m *Photo_PhotoProperties) GetExposureTime() *Fraction {
+	if m != nil {
+		return m.ExposureTime
+	}
+	return nil
+}
+
+func (m *Photo_PhotoProperties) GetFocalLength() *Fraction {
+	if m != nil {
+		return m.FocalLength
+	}
+	return nil
+}
+
+func (m *Photo_PhotoProperties) GetIso() int32 {
+	if m != nil && m.Iso != nil {
+		return *m.Iso
+	}
+	return 0
 }
 
 type PhotoSet struct {
@@ -57,7 +180,7 @@ type PhotoSet struct {
 func (m *PhotoSet) Reset()                    { *m = PhotoSet{} }
 func (m *PhotoSet) String() string            { return proto.CompactTextString(m) }
 func (*PhotoSet) ProtoMessage()               {}
-func (*PhotoSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*PhotoSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 func (m *PhotoSet) GetPhoto() []*Photo {
 	if m != nil {
@@ -66,7 +189,7 @@ func (m *PhotoSet) GetPhoto() []*Photo {
 	return nil
 }
 
-type Comparison struct {
+type ComparisonEntry struct {
 	Photo1 *string `protobuf:"bytes,1,opt,name=photo1" json:"photo1,omitempty"`
 	Photo2 *string `protobuf:"bytes,2,opt,name=photo2" json:"photo2,omitempty"`
 	// Should only be 1 or 2.
@@ -74,49 +197,66 @@ type Comparison struct {
 	XXX_unrecognized []byte `json:"-"`
 }
 
-func (m *Comparison) Reset()                    { *m = Comparison{} }
-func (m *Comparison) String() string            { return proto.CompactTextString(m) }
-func (*Comparison) ProtoMessage()               {}
-func (*Comparison) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (m *ComparisonEntry) Reset()                    { *m = ComparisonEntry{} }
+func (m *ComparisonEntry) String() string            { return proto.CompactTextString(m) }
+func (*ComparisonEntry) ProtoMessage()               {}
+func (*ComparisonEntry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
-func (m *Comparison) GetPhoto1() string {
+func (m *ComparisonEntry) GetPhoto1() string {
 	if m != nil && m.Photo1 != nil {
 		return *m.Photo1
 	}
 	return ""
 }
 
-func (m *Comparison) GetPhoto2() string {
+func (m *ComparisonEntry) GetPhoto2() string {
 	if m != nil && m.Photo2 != nil {
 		return *m.Photo2
 	}
 	return ""
 }
 
-func (m *Comparison) GetScore() int32 {
+func (m *ComparisonEntry) GetScore() int32 {
 	if m != nil && m.Score != nil {
 		return *m.Score
 	}
 	return 0
 }
 
+type Comparison struct {
+	Epoch            *int64             `protobuf:"varint,1,opt,name=epoch" json:"epoch,omitempty"`
+	Entry            []*ComparisonEntry `protobuf:"bytes,2,rep,name=entry" json:"entry,omitempty"`
+	XXX_unrecognized []byte             `json:"-"`
+}
+
+func (m *Comparison) Reset()                    { *m = Comparison{} }
+func (m *Comparison) String() string            { return proto.CompactTextString(m) }
+func (*Comparison) ProtoMessage()               {}
+func (*Comparison) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *Comparison) GetEpoch() int64 {
+	if m != nil && m.Epoch != nil {
+		return *m.Epoch
+	}
+	return 0
+}
+
+func (m *Comparison) GetEntry() []*ComparisonEntry {
+	if m != nil {
+		return m.Entry
+	}
+	return nil
+}
+
 type ComparisonSet struct {
-	Epoch            *int64        `protobuf:"varint,1,opt,name=epoch" json:"epoch,omitempty"`
-	Comparison       []*Comparison `protobuf:"bytes,2,rep,name=comparison" json:"comparison,omitempty"`
+	Comparison       []*Comparison `protobuf:"bytes,1,rep,name=comparison" json:"comparison,omitempty"`
 	XXX_unrecognized []byte        `json:"-"`
 }
 
 func (m *ComparisonSet) Reset()                    { *m = ComparisonSet{} }
 func (m *ComparisonSet) String() string            { return proto.CompactTextString(m) }
 func (*ComparisonSet) ProtoMessage()               {}
-func (*ComparisonSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
-
-func (m *ComparisonSet) GetEpoch() int64 {
-	if m != nil && m.Epoch != nil {
-		return *m.Epoch
-	}
-	return 0
-}
+func (*ComparisonSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
 func (m *ComparisonSet) GetComparison() []*Comparison {
 	if m != nil {
@@ -125,46 +265,41 @@ func (m *ComparisonSet) GetComparison() []*Comparison {
 	return nil
 }
 
-type ComparisonSets struct {
-	Set              []*ComparisonSet `protobuf:"bytes,1,rep,name=set" json:"set,omitempty"`
-	XXX_unrecognized []byte           `json:"-"`
-}
-
-func (m *ComparisonSets) Reset()                    { *m = ComparisonSets{} }
-func (m *ComparisonSets) String() string            { return proto.CompactTextString(m) }
-func (*ComparisonSets) ProtoMessage()               {}
-func (*ComparisonSets) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
-
-func (m *ComparisonSets) GetSet() []*ComparisonSet {
-	if m != nil {
-		return m.Set
-	}
-	return nil
-}
-
 func init() {
+	proto.RegisterType((*Fraction)(nil), "message.Fraction")
 	proto.RegisterType((*Photo)(nil), "message.Photo")
+	proto.RegisterType((*Photo_PhotoProperties)(nil), "message.Photo.PhotoProperties")
 	proto.RegisterType((*PhotoSet)(nil), "message.PhotoSet")
+	proto.RegisterType((*ComparisonEntry)(nil), "message.ComparisonEntry")
 	proto.RegisterType((*Comparison)(nil), "message.Comparison")
 	proto.RegisterType((*ComparisonSet)(nil), "message.ComparisonSet")
-	proto.RegisterType((*ComparisonSets)(nil), "message.ComparisonSets")
 }
 
 func init() { proto.RegisterFile("schema.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 195 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x8e, 0x31, 0xab, 0xc2, 0x30,
-	0x14, 0x85, 0xe9, 0xcb, 0xcb, 0x7b, 0x7a, 0x6d, 0x3b, 0x44, 0x94, 0x2e, 0x82, 0xc4, 0xc1, 0xba,
-	0x14, 0x2c, 0x38, 0x39, 0x3a, 0xb8, 0x0a, 0xfe, 0x82, 0x10, 0x2e, 0xd6, 0x21, 0x4d, 0xe8, 0xed,
-	0xff, 0xc7, 0x24, 0x96, 0x16, 0xc1, 0x2d, 0xe7, 0x9e, 0xf3, 0x9d, 0x1c, 0x48, 0x49, 0x37, 0x68,
-	0x54, 0xe5, 0x3a, 0xdb, 0x5b, 0xf1, 0x6f, 0x90, 0x48, 0x3d, 0x50, 0xae, 0x80, 0xdf, 0x9a, 0x70,
-	0x49, 0xe1, 0xb7, 0x55, 0x06, 0x8b, 0x64, 0x9b, 0x94, 0x73, 0x79, 0x80, 0x59, 0x3c, 0xdf, 0xb1,
-	0x17, 0x1b, 0xe0, 0x2e, 0xbc, 0xbd, 0xc5, 0xca, 0x45, 0x9d, 0x57, 0x03, 0x5b, 0xc5, 0x84, 0x3c,
-	0x03, 0x5c, 0xac, 0x71, 0xaa, 0x7b, 0x92, 0x6d, 0x45, 0x0e, 0x7f, 0x31, 0x7c, 0x7c, 0x17, 0x8d,
-	0xba, 0x2e, 0x7e, 0xa2, 0xce, 0x80, 0x93, 0xb6, 0x1d, 0x16, 0xcc, 0x4b, 0x2e, 0xaf, 0x90, 0x4d,
-	0x70, 0xf8, 0xcc, 0xfb, 0xe8, 0xac, 0x6e, 0x22, 0xce, 0xc4, 0x1e, 0x40, 0x8f, 0xbe, 0xaf, 0x08,
-	0x03, 0x96, 0xe3, 0x80, 0x09, 0x95, 0x27, 0xc8, 0x3f, 0x8a, 0x48, 0xec, 0x80, 0x11, 0xf6, 0xc3,
-	0xe8, 0xf5, 0x17, 0xc6, 0xa7, 0x5e, 0x01, 0x00, 0x00, 0xff, 0xff, 0xbc, 0xd8, 0xf2, 0x47, 0x16,
-	0x01, 0x00, 0x00,
+	// 365 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x50, 0xcd, 0x6a, 0xf2, 0x40,
+	0x14, 0x25, 0xc6, 0x68, 0xbc, 0xfe, 0x61, 0x84, 0x8f, 0xf0, 0x41, 0x4b, 0x49, 0x17, 0xda, 0x8d,
+	0xd0, 0xac, 0xba, 0x2c, 0xf4, 0x67, 0x2d, 0xf4, 0x01, 0x64, 0x1a, 0x6f, 0x93, 0xa1, 0xce, 0x4c,
+	0x98, 0x8c, 0xb4, 0x3e, 0x60, 0x5f, 0xa6, 0x4f, 0xd1, 0x3b, 0x63, 0x8c, 0x54, 0xea, 0x26, 0xe4,
+	0x9e, 0x39, 0xf7, 0x9c, 0x73, 0x0f, 0x0c, 0xaa, 0xac, 0x40, 0xc1, 0x16, 0xa5, 0x56, 0x46, 0x45,
+	0x5d, 0x81, 0x55, 0xc5, 0x72, 0x4c, 0x52, 0x08, 0x9f, 0x35, 0xcb, 0x0c, 0x57, 0x32, 0x9a, 0x40,
+	0x4f, 0x6e, 0x05, 0x6a, 0x66, 0x94, 0x8e, 0xbd, 0x2b, 0x6f, 0x1e, 0x44, 0x53, 0xe8, 0xaf, 0x51,
+	0x2a, 0xc1, 0xa5, 0x03, 0x5b, 0x16, 0x4c, 0xbe, 0x5a, 0x10, 0x2c, 0x0b, 0x2b, 0x33, 0x80, 0xb6,
+	0x64, 0x02, 0x1d, 0xb9, 0x17, 0x0d, 0x21, 0x78, 0xdd, 0x19, 0xac, 0xf6, 0xb4, 0x28, 0x05, 0x20,
+	0xb3, 0x12, 0xb5, 0xe1, 0x84, 0xf9, 0x84, 0xf5, 0xd3, 0xcb, 0x45, 0x6d, 0xbc, 0x70, 0x02, 0xfb,
+	0xef, 0xb2, 0x61, 0xfd, 0xff, 0xf6, 0x60, 0x7c, 0x82, 0x59, 0xd9, 0x0f, 0xbe, 0x36, 0x45, 0x1d,
+	0x69, 0x04, 0x9d, 0x02, 0x79, 0x5e, 0x98, 0xda, 0xe6, 0x1f, 0x8c, 0x94, 0xe6, 0x39, 0x25, 0xdc,
+	0xac, 0xb0, 0x54, 0x59, 0xe1, 0xac, 0x7c, 0x9b, 0x4d, 0xb0, 0x77, 0x8c, 0xdb, 0x87, 0x6c, 0x42,
+	0xad, 0x71, 0x13, 0x07, 0x6e, 0xbc, 0x86, 0x90, 0x59, 0xfd, 0xad, 0xc6, 0xb8, 0xe3, 0x92, 0x4d,
+	0x9a, 0x64, 0x4d, 0x1f, 0x73, 0x18, 0xe2, 0x67, 0xa9, 0x2a, 0x22, 0xad, 0x0c, 0xa7, 0x33, 0xbb,
+	0xe7, 0x98, 0x33, 0x18, 0xbc, 0xa9, 0x8c, 0x02, 0x6c, 0x50, 0xe6, 0x94, 0x34, 0x3c, 0x47, 0xec,
+	0x83, 0xcf, 0x2b, 0x15, 0xf7, 0x5c, 0x8f, 0x37, 0x10, 0xba, 0x5b, 0x5f, 0xd0, 0x44, 0x17, 0x10,
+	0x94, 0xf6, 0x9f, 0x8e, 0xf4, 0x69, 0x75, 0xf4, 0xbb, 0xa7, 0xe4, 0x1e, 0xc6, 0x0f, 0x4a, 0x94,
+	0x4c, 0xd3, 0xb6, 0x7c, 0x92, 0x46, 0xef, 0x6c, 0x0f, 0x6e, 0xe3, 0xb6, 0x6e, 0xff, 0x30, 0xa7,
+	0xae, 0x17, 0x77, 0x71, 0x95, 0x29, 0xba, 0xcf, 0x77, 0x66, 0x8f, 0x00, 0x47, 0x05, 0xfb, 0xb8,
+	0xef, 0xca, 0x73, 0x5d, 0xcd, 0x68, 0xb4, 0xa2, 0xb4, 0x6a, 0xdd, 0xe3, 0xc6, 0xfd, 0xc4, 0x34,
+	0xb9, 0x83, 0xe1, 0x11, 0xb2, 0xb9, 0x67, 0x00, 0x59, 0x03, 0xd4, 0xe1, 0xa7, 0x7f, 0xac, 0xff,
+	0x04, 0x00, 0x00, 0xff, 0xff, 0x9b, 0xbc, 0x39, 0xb0, 0x80, 0x02, 0x00, 0x00,
 }
