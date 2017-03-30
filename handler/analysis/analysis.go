@@ -8,7 +8,10 @@ import (
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/client"
 	"github.com/nthnca/curator/util"
+	"github.com/nthnca/datastore"
+
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
 )
 
 const tpl = `<!DOCTYPE html>
@@ -44,7 +47,11 @@ func (s ByLength) Less(i, j int) bool {
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
-	comparisons, _ := client.LoadAllComparisons2(ctx)
+	clt := datastore.NewGaeClient(ctx)
+	comparisons, err := client.LoadAllComparisons(clt)
+	if err != nil {
+		log.Warningf(ctx, "Loading failed: %v", err)
+	}
 	score := util.CalculateRankings(comparisons)
 
 	data := struct {

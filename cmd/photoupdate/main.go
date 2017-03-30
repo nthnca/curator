@@ -11,15 +11,13 @@ import (
 	"github.com/nthnca/curator/data/entity"
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util"
+	"github.com/nthnca/datastore"
 
-	"cloud.google.com/go/datastore"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
 
 func SavePhotoSet2(photos *message.PhotoSet) {
-	ctx := context.Background()
-	client, err := datastore.NewClient(ctx, config.ProjectID)
+	clt, err := datastore.NewCloudClient(config.ProjectID)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -30,17 +28,16 @@ func SavePhotoSet2(photos *message.PhotoSet) {
 		return
 	}
 
-	key := datastore.IncompleteKey("Tada", nil)
+	key := clt.IncompleteKey("Tada")
 	entity := entity.Comparison{Proto: serialized}
 
-	if _, err := client.Put(ctx, key, &entity); err != nil {
+	if _, err := clt.Put(key, &entity); err != nil {
 		log.Fatalf("Failed to save: %v", err)
 	}
 }
 
 func SavePhotoSet(count int, photos *message.PhotoSet) {
-	ctx := context.Background()
-	client, err := datastore.NewClient(ctx, config.ProjectID)
+	clt, err := datastore.NewCloudClient(config.ProjectID)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -51,10 +48,10 @@ func SavePhotoSet(count int, photos *message.PhotoSet) {
 		return
 	}
 
-	key := datastore.NameKey("PhotoSet", fmt.Sprintf("%v", count), nil)
+	key := clt.NameKey("PhotoSet", fmt.Sprintf("%v", count))
 	entity := entity.Photo{Proto: serialized}
 
-	if _, err := client.Put(ctx, key, &entity); err != nil {
+	if _, err := clt.Put(key, &entity); err != nil {
 		log.Fatalf("Failed to save: %v", err)
 	}
 }
@@ -67,7 +64,8 @@ func main() {
 		log.Fatalf("Error: %v", err)
 	}
 
-	comparisons, _ := client.LoadAllComparisons()
+	clt, err := datastore.NewCloudClient(config.ProjectID)
+	comparisons, _ := client.LoadAllComparisons(clt)
 
 	photos := util.CalculateRankings(comparisons)
 	for _, e := range photoList {

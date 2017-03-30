@@ -13,6 +13,7 @@ import (
 	"github.com/nthnca/curator/data/client"
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util"
+	"github.com/nthnca/datastore"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -67,11 +68,13 @@ func processImageResults(ctx context.Context, r *http.Request) {
 			Photo2: proto.String(k.Image2),
 			Score:  proto.Int32(k.Result)})
 	}
-	client.SaveComparison(ctx, &test)
+	clt := datastore.NewGaeClient(ctx)
+	client.SaveComparison(clt, &test)
 }
 
 func generateImageSet(ctx context.Context, w http.ResponseWriter) {
-	list, err := client.LoadNextTada(ctx)
+	clt := datastore.NewGaeClient(ctx)
+	list, err := client.LoadNextTada(clt)
 	if err != nil {
 		log.Warningf(ctx, "%v", err)
 		return

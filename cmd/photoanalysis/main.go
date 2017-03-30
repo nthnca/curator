@@ -7,9 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/client"
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util"
+	"github.com/nthnca/datastore"
 )
 
 type ByLength []util.Data
@@ -32,7 +34,8 @@ func main() {
 	var data []*message.Comparison
 	wg.Add(1)
 	go func() {
-		data, _ = client.LoadAllComparisons()
+		clt, _ := datastore.NewCloudClient(config.ProjectID)
+		data, _ = client.LoadAllComparisons(clt)
 		wg.Done()
 	}()
 
