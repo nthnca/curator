@@ -6,13 +6,14 @@ message Fraction {
 }
 
 message Photo {
-  optional string name = 1;
-  optional int32 bytes = 2;
+  optional string key = 1;
+  optional string path = 2;
+  optional int64 bytes = 3;
 
   message PhotoProperties {
-    optional int32 width = 1;
-    optional int32 height = 2;
-    optional int64 original_epoch = 3;
+    optional int64 original_epoch = 1;
+    optional int32 width = 2;
+    optional int32 height = 3;
     optional string make = 4;
     optional string model = 5;
     optional Fraction aperture = 6;
@@ -21,7 +22,7 @@ message Photo {
     optional int32 iso = 9;
   }
 
-  optional PhotoProperties properties = 3;
+  optional PhotoProperties properties = 4;
 }
 
 message PhotoSet {

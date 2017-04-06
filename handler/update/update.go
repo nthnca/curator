@@ -82,7 +82,7 @@ func Handler(_ *kingpin.ParseContext) error {
 		msg := message.PhotoSet{}
 		for len(msg.Photo) < 7 {
 			msg.Photo = append(msg.Photo, &message.Photo{
-				Name: proto.String(arr[j].Key)})
+				Key: proto.String(arr[j].Key)})
 			j++
 		}
 		SavePhotoSet(&msg)

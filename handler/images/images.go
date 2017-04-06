@@ -24,11 +24,11 @@ import (
 
 func tester() []*message.Photo {
 	return []*message.Photo{
-		&message.Photo{Name: proto.String("ABC")},
-		&message.Photo{Name: proto.String("CDE")},
-		&message.Photo{Name: proto.String("ABD")},
-		&message.Photo{Name: proto.String("Fake")},
-		&message.Photo{Name: proto.String("FIxmE")}}
+		&message.Photo{Key: proto.String("ABC")},
+		&message.Photo{Key: proto.String("CDE")},
+		&message.Photo{Key: proto.String("ABD")},
+		&message.Photo{Key: proto.String("Fake")},
+		&message.Photo{Key: proto.String("FIxmE")}}
 }
 
 func ParseBody(ctx context.Context, r *http.Request, v interface{}) error {
@@ -89,7 +89,7 @@ func generateImageSet(ctx context.Context, w http.ResponseWriter) {
 
 	var d []map[string]string
 	for i := range list {
-		n := list[i].GetName()
+		n := list[i].GetKey()
 		e := map[string]string{
 			"id": n,
 			"src": fmt.Sprintf(
