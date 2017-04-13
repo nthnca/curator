@@ -45,7 +45,7 @@ func Handler(_ *kingpin.ParseContext) error {
 	comparisons, _ := client.LoadAllComparisons(clt)
 
 	photos := util.CalculateRankings(comparisons)
-	for k, _ := range photoList {
+	for k := range photoList {
 		if _, ok := photos[k]; ok {
 			continue
 		}

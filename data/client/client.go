@@ -10,6 +10,33 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+func Put(clt datastore.Client, key datastore.Key, p proto.Message) (datastore.Key, error) {
+	data, err := proto.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to serialize proto: %v", err)
+	}
+
+	k, err := clt.Put(key, &Proto{Proto: data})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to save entry: %v", err)
+	}
+
+	return k, nil
+}
+
+func Get(clt datastore.Client, key datastore.Key, p proto.Message) error {
+	var entry Proto
+	if err := clt.Get(key, &entry); err != nil {
+		return fmt.Errorf("Failed to load entry: %v", err)
+	}
+
+	if err := proto.Unmarshal(entry.Proto, p); err != nil {
+		return fmt.Errorf("Failed to deserialize: %v", err)
+	}
+
+	return nil
+}
+
 func LoadNextTada(clt datastore.Client) ([]*message.Photo, error) {
 	q := clt.NewQuery("Tada") //.Limit(1)
 	for it := clt.Run(q); ; {
@@ -37,15 +64,12 @@ func LoadNextTada(clt datastore.Client) ([]*message.Photo, error) {
 }
 
 func SaveComparison(clt datastore.Client, p *message.Comparison) error {
-	data, err := proto.Marshal(p)
+	key := clt.IncompleteKey("ComparisonSet", nil)
+	_, err := Put(clt, key, p)
 	if err != nil {
 		return fmt.Errorf("Iterator failed: %v", err)
 	}
-	entry := Proto{Proto: data}
-	key := clt.IncompleteKey("ComparisonSet", nil)
-	if _, err := clt.Put(key, &entry); err != nil {
-		return fmt.Errorf("Iterator failed: %v", err)
-	}
+
 	return nil
 }
 

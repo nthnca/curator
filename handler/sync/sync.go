@@ -48,8 +48,9 @@ func Handler(_ *kingpin.ParseContext) error {
 	var mf map[string]string
 	wg.Add(1)
 	go func() {
-		mf = disk.List(".")
-		log.Printf("Photos on disk: %v\n", len(mf))
+		mf = disk.List(config.PhotoPath)
+		log.Printf("Photos found in '%s': %v\n",
+			config.PhotoPath, len(mf))
 		wg.Done()
 	}()
 
@@ -64,7 +65,7 @@ func Handler(_ *kingpin.ParseContext) error {
 	wg.Wait()
 
 	unknown := false
-	for key, _ := range mb {
+	for key := range mb {
 		if _, ok := mf[key]; ok {
 			continue
 		}

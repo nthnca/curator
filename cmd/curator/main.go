@@ -16,7 +16,7 @@ import (
 	"github.com/nthnca/curator/handler/update"
 	"github.com/nthnca/curator/util"
 
-	"github.com/nthnca/easybuild"
+	"github.com/nthnca/gobuild"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -26,7 +26,7 @@ func main() {
 	app := kingpin.New(
 		"curator",
 		"Photo organizational system that run in Google AppEngine")
-	easybuild.RegisterCommands(app, config.Path, config.ProjectID)
+	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
 	app.Command("sync", "list entries").Action(sy.Handler)
 	app.Command("analyze", "list entries").Action(analyze.Handler)
 	app.Command("update", "list entries").Action(update.Handler)
