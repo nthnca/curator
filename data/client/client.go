@@ -37,22 +37,34 @@ func Get(clt datastore.Client, key datastore.Key, p proto.Message) error {
 	return nil
 }
 
+func Next(iter datastore.Iterator, p proto.Message) (datastore.Key, error) {
+	var entry Proto
+	key, err := iter.Next(&entry)
+	if err != nil {
+		return nil, err
+	}
+
+	err = proto.Unmarshal(entry.Proto, p)
+	if err != nil {
+		return nil, fmt.Errorf("Unmarshalling error: %v", err)
+	}
+	return key, nil
+}
+
+func CreateTada(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {
+	return Put(clt, clt.IncompleteKey("Tada", nil), msg)
+}
+
 func LoadNextTada(clt datastore.Client) ([]*message.Photo, error) {
 	q := clt.NewQuery("Tada") //.Limit(1)
 	for it := clt.Run(q); ; {
-		var entry Proto
-		k, err := it.Next(&entry)
+		rv := &message.PhotoSet{}
+		k, err := Next(it, rv)
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
 			return nil, fmt.Errorf("Iterator failed: %v", err)
-		}
-
-		rv := &message.PhotoSet{}
-		err = proto.Unmarshal(entry.Proto, rv)
-		if err != nil {
-			return nil, fmt.Errorf("Unmarshalling error: %v", err)
 		}
 
 		// Delete this entry
@@ -78,8 +90,8 @@ func LoadAllComparisons(clt datastore.Client) ([]*message.ComparisonEntry, error
 
 	q := clt.NewQuery("ComparisonSet")
 	for it := clt.Run(q); ; {
-		var entry Proto
-		_, err := it.Next(&entry)
+		p := &message.Comparison{}
+		_, err := Next(it, p)
 		if err == iterator.Done {
 			break
 		}
@@ -87,13 +99,31 @@ func LoadAllComparisons(clt datastore.Client) ([]*message.ComparisonEntry, error
 			return nil, fmt.Errorf("Iterator failed: %v", err)
 		}
 
-		p := &message.Comparison{}
-		err = proto.Unmarshal(entry.Proto, p)
+		rv = append(rv, p.GetEntry()...)
+	}
+
+	return rv, nil
+}
+
+func CreatePhotoCache(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {
+	return Put(clt, clt.IncompleteKey("PhotoCache", nil), msg)
+}
+
+func ReadAllPhotoCache(clt datastore.Client) ([]*message.Photo, error) {
+	var rv []*message.Photo
+
+	q := clt.NewQuery("PhotoCache")
+	for it := clt.Run(q); ; {
+		p := &message.PhotoSet{}
+		_, err := Next(it, p)
+		if err == iterator.Done {
+			break
+		}
 		if err != nil {
-			return nil, fmt.Errorf("Unmarshalling error: %v", err)
+			return nil, fmt.Errorf("Iterator failed: %v", err)
 		}
 
-		rv = append(rv, p.GetEntry()...)
+		rv = append(rv, p.GetPhoto()...)
 	}
 
 	return rv, nil

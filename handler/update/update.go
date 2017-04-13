@@ -21,16 +21,7 @@ func SavePhotoSet(photos *message.PhotoSet) {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	serialized, err := proto.Marshal(photos)
-	if err != nil {
-		// log.Infof("Marshaling failed: %v", err)
-		return
-	}
-
-	key := clt.IncompleteKey("Tada", nil)
-	entity := client.Proto{Proto: serialized}
-
-	if _, err := clt.Put(key, &entity); err != nil {
+	if _, err := client.CreateTada(clt, photos); err != nil {
 		log.Fatalf("Failed to save: %v", err)
 	}
 }

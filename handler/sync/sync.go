@@ -9,8 +9,12 @@ import (
 	"sync"
 
 	"github.com/nthnca/curator/config"
+	"github.com/nthnca/curator/data/client"
 	"github.com/nthnca/curator/data/disk"
 	"github.com/nthnca/curator/data/gcs"
+	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/util"
+	"github.com/nthnca/datastore"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -62,6 +66,15 @@ func Handler(_ *kingpin.ParseContext) error {
 		wg.Done()
 	}()
 
+	var mp []*message.Photo
+	wg.Add(1)
+	go func() {
+		clt, _ := datastore.NewCloudClient(config.ProjectID)
+		mp, _ = client.ReadAllPhotoCache(clt)
+		log.Printf("Photos in database: %v\n", len(mp))
+		wg.Done()
+	}()
+
 	wg.Wait()
 
 	unknown := false
@@ -84,5 +97,73 @@ func Handler(_ *kingpin.ParseContext) error {
 		log.Printf("Key %v %v\n", key, path)
 		StoreFile(path, key)
 	}
+
+	if len(mp) != len(mf) {
+		log.Printf("You should sync the database")
+		// upload()
+	}
+
 	return nil
+}
+
+func worker(wg *sync.WaitGroup, jobs <-chan string, results chan<- *message.Photo) {
+	defer wg.Done()
+	for j := range jobs {
+		photo, err := util.IdentifyPhoto(j)
+		if err != nil {
+			log.Printf("%v\n", err)
+			continue
+		}
+
+		results <- photo
+	}
+}
+
+func upload() {
+	jobs := make(chan string, 100)
+	results := make(chan *message.Photo, 100)
+
+	wg := &sync.WaitGroup{}
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go worker(wg, jobs, results)
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	go func() {
+		m := disk.List(config.PhotoPath)
+		for _, path := range m {
+			jobs <- path
+
+		}
+		close(jobs)
+	}()
+
+	clt, err := datastore.NewCloudClient(config.ProjectID)
+	if err != nil {
+		log.Fatalf("Foo: %v", err)
+	}
+
+	set := message.PhotoSet{}
+	for r := range results {
+		log.Printf("%v", r.GetKey())
+		set.Photo = append(set.Photo, r)
+
+		if len(set.Photo) > 1000 {
+			_, err = client.CreatePhotoCache(clt, &set)
+			if err != nil {
+				log.Fatalf("Foo: %v", err)
+			}
+			set = message.PhotoSet{}
+		}
+	}
+
+	_, err = client.CreatePhotoCache(clt, &set)
+	if err != nil {
+		log.Fatalf("Foo: %v", err)
+	}
 }
