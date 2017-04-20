@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/nthnca/curator/config"
+	"github.com/nthnca/curator/util/need"
 )
 
 func List(root string) map[string]string {
@@ -21,4 +24,16 @@ func List(root string) map[string]string {
 
 	filepath.Walk(root, visit)
 	return m
+}
+
+var needDataPhotoList need.NeedData
+
+func NeedPhotoList() func() map[string]string {
+	n := needDataPhotoList.Need(func() interface{} {
+		d := List(config.PhotoPath)
+		return d
+	})
+	return func() map[string]string {
+		return n().(map[string]string)
+	}
 }

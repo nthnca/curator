@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/util/need"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/datastore"
 	"google.golang.org/api/iterator"
 )
 
-func Put(clt datastore.Client, key datastore.Key, p proto.Message) (datastore.Key, error) {
+func put(clt datastore.Client, key datastore.Key, p proto.Message) (datastore.Key, error) {
 	data, err := proto.Marshal(p)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to serialize proto: %v", err)
@@ -24,7 +25,7 @@ func Put(clt datastore.Client, key datastore.Key, p proto.Message) (datastore.Ke
 	return k, nil
 }
 
-func Get(clt datastore.Client, key datastore.Key, p proto.Message) error {
+func get(clt datastore.Client, key datastore.Key, p proto.Message) error {
 	var entry Proto
 	if err := clt.Get(key, &entry); err != nil {
 		return fmt.Errorf("Failed to load entry: %v", err)
@@ -37,7 +38,7 @@ func Get(clt datastore.Client, key datastore.Key, p proto.Message) error {
 	return nil
 }
 
-func Next(iter datastore.Iterator, p proto.Message) (datastore.Key, error) {
+func next(iter datastore.Iterator, p proto.Message) (datastore.Key, error) {
 	var entry Proto
 	key, err := iter.Next(&entry)
 	if err != nil {
@@ -52,14 +53,14 @@ func Next(iter datastore.Iterator, p proto.Message) (datastore.Key, error) {
 }
 
 func CreateTada(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {
-	return Put(clt, clt.IncompleteKey("Tada", nil), msg)
+	return put(clt, clt.IncompleteKey("Tada", nil), msg)
 }
 
 func LoadNextTada(clt datastore.Client) ([]*message.Photo, error) {
 	q := clt.NewQuery("Tada") //.Limit(1)
 	for it := clt.Run(q); ; {
 		rv := &message.PhotoSet{}
-		k, err := Next(it, rv)
+		k, err := next(it, rv)
 		if err == iterator.Done {
 			break
 		}
@@ -77,7 +78,7 @@ func LoadNextTada(clt datastore.Client) ([]*message.Photo, error) {
 
 func SaveComparison(clt datastore.Client, p *message.Comparison) error {
 	key := clt.IncompleteKey("ComparisonSet", nil)
-	_, err := Put(clt, key, p)
+	_, err := put(clt, key, p)
 	if err != nil {
 		return fmt.Errorf("Iterator failed: %v", err)
 	}
@@ -91,7 +92,7 @@ func LoadAllComparisons(clt datastore.Client) ([]*message.ComparisonEntry, error
 	q := clt.NewQuery("ComparisonSet")
 	for it := clt.Run(q); ; {
 		p := &message.Comparison{}
-		_, err := Next(it, p)
+		_, err := next(it, p)
 		if err == iterator.Done {
 			break
 		}
@@ -106,7 +107,7 @@ func LoadAllComparisons(clt datastore.Client) ([]*message.ComparisonEntry, error
 }
 
 func CreatePhotoCache(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {
-	return Put(clt, clt.IncompleteKey("PhotoCache", nil), msg)
+	return put(clt, clt.IncompleteKey("PhotoCache", nil), msg)
 }
 
 func ReadAllPhotoCache(clt datastore.Client) ([]*message.Photo, error) {
@@ -115,7 +116,7 @@ func ReadAllPhotoCache(clt datastore.Client) ([]*message.Photo, error) {
 	q := clt.NewQuery("PhotoCache")
 	for it := clt.Run(q); ; {
 		p := &message.PhotoSet{}
-		_, err := Next(it, p)
+		_, err := next(it, p)
 		if err == iterator.Done {
 			break
 		}
@@ -127,4 +128,16 @@ func ReadAllPhotoCache(clt datastore.Client) ([]*message.Photo, error) {
 	}
 
 	return rv, nil
+}
+
+var needPhotoCacheData need.NeedData
+
+func NeedPhotoCache(clt datastore.Client) func() []*message.Photo {
+	n := needPhotoCacheData.Need(func() interface{} {
+		mp, _ := ReadAllPhotoCache(clt)
+		return mp
+	})
+	return func() []*message.Photo {
+		return n().([]*message.Photo)
+	}
 }

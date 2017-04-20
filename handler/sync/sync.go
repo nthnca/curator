@@ -14,8 +14,8 @@ import (
 	"github.com/nthnca/curator/data/gcs"
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util"
-	"github.com/nthnca/datastore"
 
+	"github.com/nthnca/datastore"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -46,66 +46,6 @@ func StoreFile(path, key string) {
 	}
 }
 
-func Handler(_ *kingpin.ParseContext) error {
-	var wg sync.WaitGroup
-
-	var mf map[string]string
-	wg.Add(1)
-	go func() {
-		mf = disk.List(config.PhotoPath)
-		log.Printf("Photos found in '%s': %v\n",
-			config.PhotoPath, len(mf))
-		wg.Done()
-	}()
-
-	var mb map[string]string
-	wg.Add(1)
-	go func() {
-		mb, _ = gcs.List(config.StorageBucket)
-		log.Printf("Photos in bucket: %v\n", len(mb))
-		wg.Done()
-	}()
-
-	var mp []*message.Photo
-	wg.Add(1)
-	go func() {
-		clt, _ := datastore.NewCloudClient(config.ProjectID)
-		mp, _ = client.ReadAllPhotoCache(clt)
-		log.Printf("Photos in database: %v\n", len(mp))
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	unknown := false
-	for key := range mb {
-		if _, ok := mf[key]; ok {
-			continue
-		}
-		log.Printf("Unknown file in storage bucket: %v\n", key)
-		unknown = true
-	}
-
-	if unknown {
-		log.Fatalf("Can't continue because of unknown files.")
-	}
-
-	for key, path := range mf {
-		if _, ok := mb[key]; ok {
-			continue
-		}
-		log.Printf("Key %v %v\n", key, path)
-		StoreFile(path, key)
-	}
-
-	if len(mp) != len(mf) {
-		log.Printf("You should sync the database")
-		// upload()
-	}
-
-	return nil
-}
-
 func worker(wg *sync.WaitGroup, jobs <-chan string, results chan<- *message.Photo) {
 	defer wg.Done()
 	for j := range jobs {
@@ -119,51 +59,109 @@ func worker(wg *sync.WaitGroup, jobs <-chan string, results chan<- *message.Phot
 	}
 }
 
-func upload() {
-	jobs := make(chan string, 100)
-	results := make(chan *message.Photo, 100)
+func Handler(_ *kingpin.ParseContext) error {
+	var wg sync.WaitGroup
 
-	wg := &sync.WaitGroup{}
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go worker(wg, jobs, results)
-	}
-
+	wg.Add(1)
 	go func() {
-		wg.Wait()
-		close(results)
-	}()
+		defer wg.Done()
+		photoListGetter := disk.NeedPhotoList()
+		storageListGetter := gcs.NeedStorageList()
 
-	go func() {
-		m := disk.List(config.PhotoPath)
-		for _, path := range m {
-			jobs <- path
+		mf := photoListGetter()
+		log.Printf("Photos found in '%s': %v\n",
+			config.PhotoPath, len(mf))
+		mb := storageListGetter()
+		log.Printf("Photos in bucket: %v\n", len(mb))
 
+		for key := range mb {
+			if _, ok := mf[key]; ok {
+				continue
+			}
+
+			log.Printf("Unknown file in storage bucket: %v\n", key)
 		}
-		close(jobs)
 	}()
 
-	clt, err := datastore.NewCloudClient(config.ProjectID)
-	if err != nil {
-		log.Fatalf("Foo: %v", err)
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		photoListGetter := disk.NeedPhotoList()
+		storageListGetter := gcs.NeedStorageList()
 
-	set := message.PhotoSet{}
-	for r := range results {
-		log.Printf("%v", r.GetKey())
-		set.Photo = append(set.Photo, r)
+		mf := photoListGetter()
+		mb := storageListGetter()
 
-		if len(set.Photo) > 1000 {
+		for key, path := range mf {
+			if _, ok := mb[key]; ok {
+				continue
+			}
+			log.Printf("Key %v %v\n", key, path)
+			StoreFile(path, key)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		clt, _ := datastore.NewCloudClient(config.ProjectID)
+		photoListGetter := disk.NeedPhotoList()
+		photoCacheGetter := client.NeedPhotoCache(clt)
+
+		mf := photoListGetter()
+		mp := photoCacheGetter()
+		log.Printf("Photos in database: %v\n", len(mp))
+
+		if len(mp) == len(mf) {
+			log.Printf("You should sync the database")
+			return
+		}
+
+		jobs := make(chan string, 100)
+		results := make(chan *message.Photo, 100)
+
+		wg2 := &sync.WaitGroup{}
+		for i := 0; i < 5; i++ {
+			wg2.Add(1)
+			go worker(wg2, jobs, results)
+		}
+
+		go func() {
+			wg2.Wait()
+			close(results)
+		}()
+
+		go func() {
+			for _, path := range mf {
+				jobs <- path
+
+			}
+			close(jobs)
+		}()
+
+		set := message.PhotoSet{}
+		for r := range results {
+			log.Printf("%v", r.GetKey())
+			set.Photo = append(set.Photo, r)
+
+			/*
+				if len(set.Photo) > 1000 {
+					_, err = client.CreatePhotoCache(clt, &set)
+					if err != nil {
+						log.Fatalf("Foo: %v", err)
+					}
+					set = message.PhotoSet{}
+				}
+			*/
+		}
+		/*
 			_, err = client.CreatePhotoCache(clt, &set)
 			if err != nil {
 				log.Fatalf("Foo: %v", err)
 			}
-			set = message.PhotoSet{}
-		}
-	}
+		*/
+	}()
 
-	_, err = client.CreatePhotoCache(clt, &set)
-	if err != nil {
-		log.Fatalf("Foo: %v", err)
-	}
+	wg.Wait()
+	return nil
 }
