@@ -12,7 +12,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/datastore"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 func SavePhotoSet(photos *message.PhotoSet) {
@@ -26,15 +25,28 @@ func SavePhotoSet(photos *message.PhotoSet) {
 	}
 }
 
-func Handler(_ *kingpin.ParseContext) error {
+func Handler() {
 	photoList, err := gcs.List(config.StorageBucket)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 
 	clt, err := datastore.NewCloudClient(config.ProjectID)
-	comparisons, _ := client.LoadAllComparisons(clt)
 
+	/*
+		photosX, err := client.GetAllPhotos(clt)
+		if err != nil {
+			log.Printf("Failed to load photos: %v", err)
+		}
+		for _, e := range photosX {
+			if e.GetUserHide() {
+				log.Printf("%v", e.String())
+			}
+		}
+	*/
+	panic("abc")
+
+	comparisons, _ := client.LoadAllComparisons(clt)
 	photos := util.CalculateRankings(comparisons)
 	for k := range photoList {
 		if _, ok := photos[k]; ok {
@@ -78,5 +90,4 @@ func Handler(_ *kingpin.ParseContext) error {
 		}
 		SavePhotoSet(&msg)
 	}
-	return nil
 }

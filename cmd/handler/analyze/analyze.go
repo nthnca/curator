@@ -4,8 +4,6 @@ import (
 	"log"
 	"sort"
 
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
-
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/client"
 	"github.com/nthnca/curator/util"
@@ -24,7 +22,7 @@ func (s ByLength) Less(i, j int) bool {
 	return s[i].Score < s[j].Score
 }
 
-func Handler(_ *kingpin.ParseContext) error {
+func Handler() {
 	clt, err := datastore.NewCloudClient(config.ProjectID)
 	if err != nil {
 		log.Printf("Creating cloud client failed: %v", err)
@@ -48,5 +46,4 @@ func Handler(_ *kingpin.ParseContext) error {
 		log.Printf("%v: (%v) %v", y.Key, y.Views, y.Score)
 	}
 	log.Printf("LEN: %v", len(data))
-	return nil
 }

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nthnca/curator/handler/analysis"
-	"github.com/nthnca/curator/handler/images"
-	"github.com/nthnca/curator/handler/index"
+	"github.com/nthnca/curator/gaeweb/handler/analysis"
+	"github.com/nthnca/curator/gaeweb/handler/images"
+	"github.com/nthnca/curator/gaeweb/handler/index"
 )
 
 func init() {

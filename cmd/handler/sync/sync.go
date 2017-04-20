@@ -16,7 +16,6 @@ import (
 	"github.com/nthnca/curator/util"
 
 	"github.com/nthnca/datastore"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 // Should implement this to speed this up
@@ -59,9 +58,10 @@ func worker(wg *sync.WaitGroup, jobs <-chan string, results chan<- *message.Phot
 	}
 }
 
-func Handler(_ *kingpin.ParseContext) error {
+func Handler() {
 	var wg sync.WaitGroup
 
+	// Remove files from GCS that are marked deleted.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -83,6 +83,7 @@ func Handler(_ *kingpin.ParseContext) error {
 		}
 	}()
 
+	// Store new files in GCS.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -101,12 +102,13 @@ func Handler(_ *kingpin.ParseContext) error {
 		}
 	}()
 
+	// Add new files into datastore.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		clt, _ := datastore.NewCloudClient(config.ProjectID)
 		photoListGetter := disk.NeedPhotoList()
-		photoCacheGetter := client.NeedPhotoCache(clt)
+		photoCacheGetter := client.NeedPhotos(clt)
 
 		mf := photoListGetter()
 		mp := photoCacheGetter()
@@ -162,22 +164,5 @@ func Handler(_ *kingpin.ParseContext) error {
 		*/
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		clt, _ := datastore.NewCloudClient(config.ProjectID)
-		photoCacheGetter := client.NeedPhotoCache(clt)
-
-		mp := photoCacheGetter()
-
-		for _, photo := range mp {
-			log.Printf("%v", photo.GetKey())
-			/*
-				client.UpdatePhoto(clt, photo.GetKey(), photo)
-			*/
-		}
-	}()
-
 	wg.Wait()
-	return nil
 }

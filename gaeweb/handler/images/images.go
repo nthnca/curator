@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/client"
 	"github.com/nthnca/curator/data/message"
@@ -16,7 +17,6 @@ import (
 	"github.com/nthnca/datastore"
 
 	humanize "github.com/dustin/go-humanize"
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
@@ -40,6 +40,13 @@ type PhotoJson struct {
 	ID   string        `json:"id"`
 	Src  string        `json:"src"`
 	Info PhotoInfoJson `json:"info"`
+}
+
+type PhotoRequest struct {
+	ID     string `json:"id"`
+	Result int    `json:"result"`
+	Angle  int    `json:"angle"`
+	Flag   int    `json:"flag"`
 }
 
 func tester() []PhotoJson {
@@ -66,30 +73,34 @@ func ParseBody(ctx context.Context, r *http.Request, v interface{}) error {
 }
 
 func processImageResults(ctx context.Context, r *http.Request) {
-	var ir []struct {
-		Image1, Image2 string
-		Result         int32
-	}
-
+	var ir []PhotoRequest
 	if err := ParseBody(ctx, r, &ir); err != nil {
 		log.Warningf(ctx, "Couldn't decode post: %v", err)
 		return
 	}
 
-	if len(ir) == 0 {
-		return
-	}
-
+	clt := datastore.NewGaeClient(ctx)
 	test := message.Comparison{
 		Epoch: proto.Int64(time.Now().Unix())}
-	for _, k := range ir {
-		test.Entry = append(test.Entry, &message.ComparisonEntry{
-			Photo1: proto.String(k.Image1),
-			Photo2: proto.String(k.Image2),
-			Score:  proto.Int32(k.Result)})
+	for _, e1 := range ir {
+		if e1.Flag == 1 {
+			p, _ := client.GetPhoto(clt, e1.ID)
+			p.UserHide = proto.Bool(true)
+			client.UpdatePhoto(clt, e1.ID, &p)
+		}
+		for _, e2 := range ir {
+			if e1.Result <= e2.Result {
+				continue
+			}
+			test.Entry = append(test.Entry, &message.ComparisonEntry{
+				Photo1: proto.String(e1.ID),
+				Photo2: proto.String(e2.ID),
+				Score:  proto.Int32(int32(e1.Result - e2.Result))})
+		}
 	}
-	clt := datastore.NewGaeClient(ctx)
-	client.SaveComparison(clt, &test)
+	if len(test.Entry) > 0 {
+		client.SaveComparison(clt, &test)
+	}
 }
 
 func gcd(x, y int32) int32 {
@@ -105,11 +116,14 @@ func gcd(x, y int32) int32 {
 func generateImageSet(ctx context.Context, w http.ResponseWriter) {
 	clt := datastore.NewGaeClient(ctx)
 
-	var d []PhotoJson //map[string]string
+	var d []PhotoJson
 	list, _ := client.LoadNextTada(clt)
 	for i := range list {
 		n := list[i].GetKey()
 		p, _ := client.GetPhoto(clt, n)
+		if p.GetUserHide() {
+			continue
+		}
 		prop := p.GetProperties()
 		exp_n, exp_d := prop.GetExposureTime().GetNumerator(),
 			prop.GetExposureTime().GetDenominator()

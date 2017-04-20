@@ -122,17 +122,14 @@ window.onload = function() {
         infoShown = !infoShown;
       },
       submitResults = function() {
-        var i, j;
+        var i;
         var res = [];
         for (i = 0; i < images.length; i++) {
-          for (j = 0; j < images.length; j++) {
-            if (!$.isNumeric(images[j].value)) images[j].value = 1;
-            if (images[i].value <= images[j].value) continue;
-
-            res.push({image1:images[i].id,
-                      image2:images[j].id,
-                      result:images[i].value - images[j].value});
-          }
+          var img = images[i];
+          res.push({id:img.id,
+                    result:($.isNumeric(img.value) ? img.value : 1),
+                    angle:($.isNumeric(img.angle) ? img.angle : 0),
+                    flag:($.isNumeric(img.flag) ? img.flag : 0)});
         }
         images = [];
         imgElement.src = "/r/spinner.svg";
