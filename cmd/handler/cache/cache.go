@@ -3,7 +3,6 @@ package cache
 import (
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/client"
-
 	"github.com/nthnca/datastore"
 )
 

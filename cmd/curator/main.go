@@ -5,12 +5,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/nthnca/curator/cmd/handler/analyze"
 	"github.com/nthnca/curator/cmd/handler/cache"
-	sy "github.com/nthnca/curator/cmd/handler/sync"
+	"github.com/nthnca/curator/cmd/handler/queue"
+	"github.com/nthnca/curator/cmd/handler/stats"
 	"github.com/nthnca/curator/cmd/handler/update"
 	"github.com/nthnca/curator/config"
-
 	"github.com/nthnca/gobuild"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -22,9 +21,9 @@ func main() {
 		"curator",
 		"Photo organizational system that run in Google AppEngine")
 	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
-	app.Command("sync", "Update cloud data as needed").Action(
+	app.Command("sync", "Sync photos on disk to the cloud").Action(
 		func(_ *kingpin.ParseContext) error {
-			sy.Handler()
+			update.Handler()
 			return nil
 		})
 	app.Command("cache", "Update datastore caches").Action(
@@ -32,14 +31,14 @@ func main() {
 			cache.Handler()
 			return nil
 		})
-	app.Command("analyze", "list entries").Action(
+	app.Command("queue", "queue more work items").Action(
 		func(_ *kingpin.ParseContext) error {
-			analyze.Handler()
+			queue.Handler()
 			return nil
 		})
-	app.Command("update", "list entries").Action(
+	app.Command("stats", "analyze curator data").Action(
 		func(_ *kingpin.ParseContext) error {
-			update.Handler()
+			stats.Handler()
 			return nil
 		})
 	kingpin.MustParse(app.Parse(os.Args[1:]))

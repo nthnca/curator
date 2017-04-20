@@ -51,10 +51,10 @@ type PhotoRequest struct {
 
 func tester() []PhotoJson {
 	return []PhotoJson{
-		PhotoJson{ID: "a", Src: "http://i.imgur.com/xfrYauH.jpg", Info: PhotoInfoJson{ISO: "iso100"}},
-		PhotoJson{ID: "b", Src: "http://i.imgur.com/Oci11T4.jpg", Info: PhotoInfoJson{ISO: "iso200"}},
-		PhotoJson{ID: "c", Src: "http://i.imgur.com/Z9sNBeP.jpg", Info: PhotoInfoJson{ISO: "iso300"}},
-		PhotoJson{ID: "d", Src: "http://i.imgur.com/402I0Z8.jpg", Info: PhotoInfoJson{ISO: "iso400"}},
+		{ID: "a", Src: "http://i.imgur.com/xfrYauH.jpg", Info: PhotoInfoJson{ISO: "iso100"}},
+		{ID: "b", Src: "http://i.imgur.com/Oci11T4.jpg", Info: PhotoInfoJson{ISO: "iso200"}},
+		{ID: "c", Src: "http://i.imgur.com/Z9sNBeP.jpg", Info: PhotoInfoJson{ISO: "iso300"}},
+		{ID: "d", Src: "http://i.imgur.com/402I0Z8.jpg", Info: PhotoInfoJson{ISO: "iso400"}},
 	}
 }
 
@@ -117,7 +117,7 @@ func generateImageSet(ctx context.Context, w http.ResponseWriter) {
 	clt := datastore.NewGaeClient(ctx)
 
 	var d []PhotoJson
-	list, _ := client.LoadNextTada(clt)
+	list, _ := client.LoadNextQueue(clt)
 	for i := range list {
 		n := list[i].GetKey()
 		p, _ := client.GetPhoto(clt, n)

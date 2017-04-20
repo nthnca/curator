@@ -9,12 +9,12 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-func CreateTada(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {
-	return put(clt, clt.IncompleteKey("Tada", nil), msg)
+func CreateQueue(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {
+	return put(clt, clt.IncompleteKey("Queue", nil), msg)
 }
 
-func LoadNextTada(clt datastore.Client) ([]*message.Photo, error) {
-	q := clt.NewQuery("Tada") //.Limit(1)
+func LoadNextQueue(clt datastore.Client) ([]*message.Photo, error) {
+	q := clt.NewQuery("Queue").Limit(1)
 	for it := clt.Run(q); ; {
 		rv := &message.PhotoSet{}
 		k, err := next(it, rv)
@@ -31,6 +31,25 @@ func LoadNextTada(clt datastore.Client) ([]*message.Photo, error) {
 	}
 
 	return nil, fmt.Errorf("No results found.")
+}
+
+func ClearQueue(clt datastore.Client) error {
+	q := clt.NewQuery("Queue")
+	for it := clt.Run(q); ; {
+		rv := &message.PhotoSet{}
+		k, err := next(it, rv)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("Iterator failed: %v", err)
+		}
+
+		// Delete this entry
+		clt.Delete(k)
+	}
+
+	return nil
 }
 
 func SaveComparison(clt datastore.Client, p *message.Comparison) error {
