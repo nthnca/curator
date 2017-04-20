@@ -99,7 +99,7 @@ func processImageResults(ctx context.Context, r *http.Request) {
 		}
 	}
 	if len(test.Entry) > 0 {
-		client.SaveComparison(clt, &test)
+		client.PutComparison(clt, &test)
 	}
 }
 
@@ -117,7 +117,7 @@ func generateImageSet(ctx context.Context, w http.ResponseWriter) {
 	clt := datastore.NewGaeClient(ctx)
 
 	var d []PhotoJson
-	list, _ := client.LoadNextQueue(clt)
+	list, _ := client.GetNextQueue(clt)
 	for i := range list {
 		n := list[i].GetKey()
 		p, _ := client.GetPhoto(clt, n)

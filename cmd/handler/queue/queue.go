@@ -46,7 +46,7 @@ func SavePhotoSet(clt datastore.Client, photos []*message.Photo) {
 	queue := message.PhotoSet{}
 	queue.Photo = photos
 
-	if _, err := client.CreateQueue(clt, &queue); err != nil {
+	if _, err := client.PutQueue(clt, &queue); err != nil {
 		log.Fatalf("Failed to save: %v", err)
 	}
 }

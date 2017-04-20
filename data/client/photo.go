@@ -5,22 +5,24 @@ import (
 
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util/need"
-
 	"github.com/nthnca/datastore"
 	"google.golang.org/api/iterator"
 )
 
+// GetPhoto loads the specified Photo message from the datastore.
 func GetPhoto(clt datastore.Client, key string) (message.Photo, error) {
 	var p message.Photo
 	err := get(clt, clt.NameKey("Photo", key, nil), &p)
 	return p, err
 }
 
+// UpdatePhoto saves a given Photo message to the datastore.
 func UpdatePhoto(clt datastore.Client, key string, msg *message.Photo) error {
 	_, err := put(clt, clt.NameKey("Photo", key, nil), msg)
 	return err
 }
 
+// GetPhotos loads all Comparison messages from the datastore.
 func GetPhotos(clt datastore.Client) ([]*message.Photo, error) {
 	var rv []*message.Photo
 
@@ -32,7 +34,7 @@ func GetPhotos(clt datastore.Client) ([]*message.Photo, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Iterator failed: %v", err)
+			return nil, err
 		}
 
 		rv = append(rv, p.GetPhoto()...)
@@ -43,6 +45,8 @@ func GetPhotos(clt datastore.Client) ([]*message.Photo, error) {
 
 var needPhotoCacheData need.NeedData
 
+// NeedPhotos starts loading all Comparison messages from the datastore and
+// returns a function that will block as needed until they are loaded.
 func NeedPhotos(clt datastore.Client) func() []*message.Photo {
 	n := needPhotoCacheData.Need(func() interface{} {
 		mp, _ := GetPhotos(clt)
@@ -53,6 +57,8 @@ func NeedPhotos(clt datastore.Client) func() []*message.Photo {
 	}
 }
 
+// CompactPhotoCache updates the PhotoCache to duplicate what is in the Photo
+// tables.
 func CompactPhotoCache(clt datastore.Client) error {
 	clearPhotoCache(clt)
 

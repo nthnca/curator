@@ -48,7 +48,7 @@ func (s ByLength) Less(i, j int) bool {
 func Handler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 	clt := datastore.NewGaeClient(ctx)
-	comparisons, err := client.LoadAllComparisons(clt)
+	comparisons, err := client.GetComparisons(clt)
 	if err != nil {
 		log.Warningf(ctx, "Loading failed: %v", err)
 	}

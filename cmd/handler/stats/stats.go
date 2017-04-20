@@ -28,7 +28,7 @@ func Handler() {
 		log.Printf("Creating cloud client failed: %v", err)
 	}
 
-	comparisons, err := client.LoadAllComparisons(clt)
+	comparisons, err := client.GetComparisons(clt)
 	if err != nil {
 		log.Printf("Failed to load comparisons: %v", err)
 	}
