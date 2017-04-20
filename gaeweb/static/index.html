@@ -80,10 +80,17 @@ window.onload = function() {
         fadeIn("");
         current = (current + incr + images.length) % images.length;
         imgElement.src = images[current].src;
-        $(".i-date").text(images[current].id.substring(0,8));
-        $(".i-time").text(images[current].id.substring(9,13));
         v = images[current].value;
         $(".i-score").text((v == 0) ? "-1" : (v == 2) ? "+1" : "--");
+        $(".i-date").text(images[current].info.Date);
+        $(".i-camera").text(images[current].info.Camera);
+        $(".i-dimension-x").text(images[current].info.X);
+        $(".i-dimension-y").text(images[current].info.Y);
+        $(".i-size").text(images[current].info.Bytes);
+        $(".i-aperture").text(images[current].info.Aperture);
+        $(".i-shutter").text(images[current].info.Shutter);
+        $(".i-focal").text(images[current].info.FocalLength);
+        $(".i-iso").text(images[current].info.ISO);
         rotateImage(0);
         flagImage(0);
       },
@@ -172,8 +179,7 @@ window.onload = function() {
   </div>
   <div class="info none">
     <br /><br />
-    <div><span class="i-date">June 1, 2015</span> &nbsp;
-         <span class="i-time small">14:15</span></div>
+    <div><span class="i-date">June 1, 2015 14:15</span></div>
 
     <br />
     <div><span class="i-camera">Panasonic GF1</span></div>
@@ -182,9 +188,8 @@ window.onload = function() {
          <span class="i-size small">8MB</span></div>
     <div><span class="i-aperture small">f/2</span> &nbsp;
          <span class="i-shutter small">1/30</span> &nbsp;
-         <span class="i-x small">2.64mm</span> &nbsp;
-         <span class="i-iso small">ISO400</span></div>
-
+         <span class="i-focal small">2.64mm</span> &nbsp;
+         <span class="i-iso small">ISO40</span></div>
     <br />
     <div>Score: <span class="i-score">+1</span></div>
     <div>Flag: <span class="i-flag">--</span></div>

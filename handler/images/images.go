@@ -15,6 +15,7 @@ import (
 	"github.com/nthnca/curator/util"
 	"github.com/nthnca/datastore"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -22,13 +23,32 @@ import (
 	"google.golang.org/appengine/taskqueue"
 )
 
-func tester() []*message.Photo {
-	return []*message.Photo{
-		&message.Photo{Key: proto.String("ABC")},
-		&message.Photo{Key: proto.String("CDE")},
-		&message.Photo{Key: proto.String("ABD")},
-		&message.Photo{Key: proto.String("Fake")},
-		&message.Photo{Key: proto.String("FIxmE")}}
+type PhotoInfoJson struct {
+	Date        string
+	Time        string
+	Camera      string
+	X           string
+	Y           string
+	Bytes       string
+	Aperture    string
+	Shutter     string
+	FocalLength string
+	ISO         string
+}
+
+type PhotoJson struct {
+	ID   string        `json:"id"`
+	Src  string        `json:"src"`
+	Info PhotoInfoJson `json:"info"`
+}
+
+func tester() []PhotoJson {
+	return []PhotoJson{
+		PhotoJson{ID: "a", Src: "http://i.imgur.com/xfrYauH.jpg", Info: PhotoInfoJson{ISO: "iso100"}},
+		PhotoJson{ID: "b", Src: "http://i.imgur.com/Oci11T4.jpg", Info: PhotoInfoJson{ISO: "iso200"}},
+		PhotoJson{ID: "c", Src: "http://i.imgur.com/Z9sNBeP.jpg", Info: PhotoInfoJson{ISO: "iso300"}},
+		PhotoJson{ID: "d", Src: "http://i.imgur.com/402I0Z8.jpg", Info: PhotoInfoJson{ISO: "iso400"}},
+	}
 }
 
 func ParseBody(ctx context.Context, r *http.Request, v interface{}) error {
@@ -72,30 +92,58 @@ func processImageResults(ctx context.Context, r *http.Request) {
 	client.SaveComparison(clt, &test)
 }
 
+func gcd(x, y int32) int32 {
+	for y != 0 {
+		x, y = y, x%y
+	}
+	if x == 0 {
+		return 1
+	}
+	return x
+}
+
 func generateImageSet(ctx context.Context, w http.ResponseWriter) {
 	clt := datastore.NewGaeClient(ctx)
-	list, err := client.LoadNextTada(clt)
-	if err != nil {
-		log.Warningf(ctx, "%v", err)
-		return
-	}
 
-	if util.IsDevAppServer() {
-		log.Warningf(ctx, "IN TEST MODE")
-		list = tester()
-		time.Sleep(2000000000)
-		log.Warningf(ctx, "DONE SLEEPING")
-	}
-
-	var d []map[string]string
+	var d []PhotoJson //map[string]string
+	list, _ := client.LoadNextTada(clt)
 	for i := range list {
 		n := list[i].GetKey()
-		e := map[string]string{
-			"id": n,
-			"src": fmt.Sprintf(
+		p, _ := client.GetPhoto(clt, n)
+		prop := p.GetProperties()
+		exp_n, exp_d := prop.GetExposureTime().GetNumerator(),
+			prop.GetExposureTime().GetDenominator()
+		exp_gcd := gcd(exp_n, exp_d)
+		date := time.Unix(prop.GetOriginalEpoch(), 0).Format(time.RFC1123)
+		date = strings.Replace(date, " 0", " ", -1)
+		date = strings.Join(strings.Split(date, ":")[:2], ":")
+
+		i := PhotoInfoJson{
+			Date:   date,
+			Camera: prop.GetMake() + " " + prop.GetModel(),
+			X:      fmt.Sprintf("%d", prop.GetWidth()),
+			Y:      fmt.Sprintf("%d", prop.GetHeight()),
+			Bytes:  humanize.Bytes(uint64(p.GetBytes())),
+			Aperture: fmt.Sprintf("f/%.1f",
+				float64(prop.GetAperture().GetNumerator())/float64(prop.GetAperture().GetDenominator())),
+			Shutter: fmt.Sprintf("%d/%d", exp_n/exp_gcd, exp_d/exp_gcd),
+			FocalLength: fmt.Sprintf("%.1f mm",
+				float64(prop.GetFocalLength().GetNumerator())/float64(prop.GetFocalLength().GetDenominator())),
+			ISO: fmt.Sprintf("iso%d", prop.GetIso()),
+		}
+		f := PhotoJson{
+			ID: n,
+			Src: fmt.Sprintf(
 				"https://storage.googleapis.com/%v/%v.jpg",
-				config.StorageBucket, n)}
-		d = append(d, e)
+				config.StorageBucket, n),
+			Info: i}
+		d = append(d, f)
+	}
+	if util.IsDevAppServer() {
+		log.Warningf(ctx, "IN TEST MODE")
+		d = tester()
+		time.Sleep(2000000000)
+		log.Warningf(ctx, "DONE SLEEPING")
 	}
 	jData, _ := json.Marshal(d)
 

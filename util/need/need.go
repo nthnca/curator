@@ -8,7 +8,9 @@ type NeedData struct {
 	wg   sync.WaitGroup
 }
 
-func (n *NeedData) Need(retrieve func() interface{}) func() interface{} {
+type Blah func() interface{}
+
+func (n *NeedData) Need(retrieve Blah) Blah {
 	n.once.Do(func() {
 		n.wg.Add(1)
 		go func() {

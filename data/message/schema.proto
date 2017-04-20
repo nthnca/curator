@@ -9,6 +9,7 @@ message Photo {
   optional string key = 1;
   optional string path = 2;
   optional int64 bytes = 3;
+  optional bool user_hide = 5;
 
   message PhotoProperties {
     optional int64 original_epoch = 1;
@@ -20,6 +21,7 @@ message Photo {
     optional Fraction exposure_time = 7;
     optional Fraction focal_length = 8;
     optional int32 iso = 9;
+    optional int64 file_size_bytes = 10;
   }
 
   optional PhotoProperties properties = 4;

@@ -6,51 +6,9 @@ import (
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util/need"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/datastore"
 	"google.golang.org/api/iterator"
 )
-
-func put(clt datastore.Client, key datastore.Key, p proto.Message) (datastore.Key, error) {
-	data, err := proto.Marshal(p)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to serialize proto: %v", err)
-	}
-
-	k, err := clt.Put(key, &Proto{Proto: data})
-	if err != nil {
-		return nil, fmt.Errorf("Failed to save entry: %v", err)
-	}
-
-	return k, nil
-}
-
-func get(clt datastore.Client, key datastore.Key, p proto.Message) error {
-	var entry Proto
-	if err := clt.Get(key, &entry); err != nil {
-		return fmt.Errorf("Failed to load entry: %v", err)
-	}
-
-	if err := proto.Unmarshal(entry.Proto, p); err != nil {
-		return fmt.Errorf("Failed to deserialize: %v", err)
-	}
-
-	return nil
-}
-
-func next(iter datastore.Iterator, p proto.Message) (datastore.Key, error) {
-	var entry Proto
-	key, err := iter.Next(&entry)
-	if err != nil {
-		return nil, err
-	}
-
-	err = proto.Unmarshal(entry.Proto, p)
-	if err != nil {
-		return nil, fmt.Errorf("Unmarshalling error: %v", err)
-	}
-	return key, nil
-}
 
 func CreateTada(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {
 	return put(clt, clt.IncompleteKey("Tada", nil), msg)
@@ -104,6 +62,49 @@ func LoadAllComparisons(clt datastore.Client) ([]*message.ComparisonEntry, error
 	}
 
 	return rv, nil
+}
+
+func UpdatePhoto(clt datastore.Client, key string, msg *message.Photo) error {
+	_, err := put(clt, clt.NameKey("Photo", key, nil), msg)
+	return err
+}
+
+func GetPhoto(clt datastore.Client, key string) (message.Photo, error) {
+	var p message.Photo
+	err := get(clt, clt.NameKey("Photo", key, nil), &p)
+	return p, err
+}
+
+func ReadAllPhoto(clt datastore.Client) ([]*message.Photo, error) {
+	var rv []*message.Photo
+
+	q := clt.NewQuery("Photo")
+	for it := clt.Run(q); ; {
+		p := &message.Photo{}
+		_, err := next(it, p)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("Iterator failed: %v", err)
+		}
+
+		rv = append(rv, p)
+	}
+
+	return rv, nil
+}
+
+var needPhotoState need.NeedData
+
+func NeedPhoto(clt datastore.Client) func() []*message.Photo {
+	n := needPhotoState.Need(func() interface{} {
+		mp, _ := ReadAllPhoto(clt)
+		return mp
+	})
+	return func() []*message.Photo {
+		return n().([]*message.Photo)
+	}
 }
 
 func CreatePhotoCache(clt datastore.Client, msg *message.PhotoSet) (datastore.Key, error) {

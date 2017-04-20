@@ -162,6 +162,22 @@ func Handler(_ *kingpin.ParseContext) error {
 		*/
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		clt, _ := datastore.NewCloudClient(config.ProjectID)
+		photoCacheGetter := client.NeedPhotoCache(clt)
+
+		mp := photoCacheGetter()
+
+		for _, photo := range mp {
+			log.Printf("%v", photo.GetKey())
+			/*
+				client.UpdatePhoto(clt, photo.GetKey(), photo)
+			*/
+		}
+	}()
+
 	wg.Wait()
 	return nil
 }

@@ -30,8 +30,7 @@ var needDataPhotoList need.NeedData
 
 func NeedPhotoList() func() map[string]string {
 	n := needDataPhotoList.Need(func() interface{} {
-		d := List(config.PhotoPath)
-		return d
+		return List(config.PhotoPath)
 	})
 	return func() map[string]string {
 		return n().(map[string]string)
