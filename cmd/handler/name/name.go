@@ -7,31 +7,32 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/rwcarlsen/goexif/exif"
 )
 
-/*
-func IsValidPhotoID(name string) bool {
-	match, err := regexp.MatchString("^[0-9]+-[0-9]+[^.]+$", name)
-	if err != nil {
-		log.Fatalf("Regexp failed: %v", err)
-	}
-	return match
-}
-		if !dryRun {
-			os.Rename(path, result)
-		}
-*/
+var cameraModels = make(map[string]string)
 
-func NamePhoto(path string) (string, error) {
+func initCameraModels() {
+	cameraModels = map[string]string{
+		"DMC-GF1": "GF1",
+		"DMC-GX7": "GX7",
+		"DMC-LX3": "LX3",
+	}
+}
+
+func isValidPhotoName(path string) bool {
+	match, err := regexp.MatchString(".*[.](jpg|JPG)$", path)
+	return err == nil && match
+}
+
+// getPhotoName creates a canonical name for a photo based on its original
+// name plus EXIF data.
+// TODO: Switch this to using ImageMagick
+func getPhotoName(path string) (string, error) {
 	extension := filepath.Ext(path)
 	basename := strings.TrimSuffix(filepath.Base(path), extension)
-
-	match, err := regexp.MatchString("^[.](jpg|JPG)$", extension)
-	if err != nil || !match {
-		return "", fmt.Errorf("Invalid file extension: %s", path)
-	}
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -50,12 +51,6 @@ func NamePhoto(path string) (string, error) {
 		return s
 	}
 
-	cameraModels := map[string]string{
-		"DMC-GF1": "GF1",
-		"DMC-GX7": "GX7",
-		"DMC-LX3": "LX3",
-	}
-
 	datetime := strings.Replace(get(exif.DateTimeOriginal), ":", "", -1)
 	date := strings.Split(datetime, " ")[0]
 	time := strings.Split(datetime, " ")[1]
@@ -67,11 +62,10 @@ func NamePhoto(path string) (string, error) {
 	result := fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, model, basename)
 
 	return result, nil
-
 }
 
-func Handler(dest string, liveRun bool) {
-	err := filepath.Walk(".",
+func generateFileNames(foo chan<- string) error {
+	return filepath.Walk(".",
 		func(path string, fs os.FileInfo, err error) error {
 			if path == "." {
 				return nil
@@ -81,30 +75,82 @@ func Handler(dest string, liveRun bool) {
 				return filepath.SkipDir
 			}
 
-			name, err := NamePhoto(path)
-			if err != nil {
-				log.Printf("Error: %v", err)
-				return nil
-			}
+			foo <- path
 
-			result := filepath.Join(dest, name[:4], name)
-			if _, err := os.Stat(result); !os.IsNotExist(err) {
-				log.Printf("File already exists: %v", result)
-				return nil
-			}
-
-			if !liveRun {
-				// log.Printf("(dry-run) cp %s %s", path, result)
-				return nil
-			}
-
-			log.Printf("cp %s %s", path, result)
-			os.Chmod(path, 0644)
-			os.Link(path, result)
 			return nil
 		})
+}
 
-	if err != nil {
-		fmt.Printf("filepath.Walk() returned %v\n", err)
+func processFiles(f func(path string) error) bool {
+	files := make(chan string)
+	errors := false
+
+	wg := &sync.WaitGroup{}
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func() {
+			for path := range files {
+				if err := f(path); err != nil {
+					log.Printf("%v", err)
+					errors = true
+				}
+			}
+			wg.Done()
+		}()
 	}
+
+	generateFileNames(files)
+	close(files)
+	wg.Wait()
+
+	return errors
+}
+
+type copy struct {
+	dest   string
+	doCopy bool
+}
+
+func (c *copy) checkAndCopy(path string) error {
+	if !isValidPhotoName(path) {
+		return fmt.Errorf("Skipping file: %v", path)
+	}
+
+	name, err := getPhotoName(path)
+	if err != nil {
+		return fmt.Errorf("Failed to determine name: %v", err)
+	}
+
+	if !c.doCopy {
+		return nil
+	}
+
+	result := filepath.Join(c.dest, name[:4], name)
+	if _, err := os.Stat(result); !os.IsNotExist(err) {
+		return fmt.Errorf("File already exists: %v", result)
+	}
+
+	// log.Printf("cp %s %s", path, result)
+	if err := os.Chmod(path, 0644); err != nil {
+		return err
+	}
+
+	if err := os.Link(path, result); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Handler(dest string, liveRun bool) {
+	log.SetFlags(0)
+	initCameraModels()
+	c := &copy{dest: dest}
+	if processFiles(c.checkAndCopy) {
+		log.Printf("Didn't copy files, fix errors and re-run")
+		return
+	}
+
+	c.doCopy = true
+	processFiles(c.checkAndCopy)
 }

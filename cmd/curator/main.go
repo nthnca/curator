@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -28,7 +27,6 @@ func main() {
 		var liveRun *bool
 		cmd := app.Command("name", "Process photos in current directory and add to repo")
 		cmd.Action(func(_ *kingpin.ParseContext) error {
-			fmt.Printf("Name the photos: %t\n", *liveRun)
 			name.Handler(config.PhotoPath, *liveRun)
 			return nil
 		})
