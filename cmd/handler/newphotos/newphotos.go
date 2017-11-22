@@ -7,17 +7,21 @@ import (
 	"crypto/sha256"
 	"io/ioutil"
 	"log"
+	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/message"
 	"github.com/nthnca/curator/util"
 	"google.golang.org/api/iterator"
 )
 
+const (
+	dryRun = false
+)
+
 var (
-	photoData []message.Photo
+	photoData util.Metadata
 )
 
 func Handler() {
@@ -27,33 +31,10 @@ func Handler() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	meta := client.Bucket(config.MetadataStorageBucket)
-	for it := meta.Objects(ctx, nil); ; {
-		obj, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			log.Fatalf("Failed to iterate through objects: %v", err)
-		}
-
-		rc, err := client.Bucket(config.MetadataStorageBucket).Object(obj.Name).NewReader(ctx)
-		if err != nil {
-			log.Fatalf("Failed to create reader: %v", err)
-		}
-
-		slurp, err := ioutil.ReadAll(rc)
-		rc.Close()
-		if err != nil {
-			log.Fatalf("Failed to read file: %v", err)
-		}
-
-		var ph message.Photo
-		if err := proto.Unmarshal(slurp, &ph); err != nil {
-			log.Fatalf("Failed to read file: %v", err)
-		}
-		photoData = append(photoData, ph)
-	}
+	t := time.Now().UnixNano()
+	photoData.Load(ctx, client)
+	log.Printf("Metadata read took %v seconds",
+		float64(time.Now().UnixNano()-t)/1000000000.0)
 
 	for it := client.Buckets(ctx, config.PhotoQueueProject); ; {
 		bktiter, err := it.Next()
@@ -74,12 +55,17 @@ func Handler() {
 				log.Fatalf("Failed to iterate through objects: %v", err)
 			}
 
-			process(obj)
+			photo, haveInfo := getPhotoInfo(obj)
+			havePhoto := addPhotoToLongTerm(obj, photo)
+
+			if haveInfo && havePhoto {
+				removePhotoFromQueue(obj)
+			}
 		}
 	}
 }
 
-func getPhotoInfo(attr *storage.ObjectAttrs) *message.Photo {
+func getPhotoInfo(attr *storage.ObjectAttrs) (*message.Photo, bool) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -94,7 +80,7 @@ func getPhotoInfo(attr *storage.ObjectAttrs) *message.Photo {
 	slurp, err := ioutil.ReadAll(rc)
 	rc.Close()
 	if err != nil {
-		log.Fatalf("Failed to read file: %v", err)
+		log.Fatalf("Failed to read photo: %v", err)
 	}
 
 	md := md5.Sum([]byte(slurp))
@@ -102,12 +88,10 @@ func getPhotoInfo(attr *storage.ObjectAttrs) *message.Photo {
 		log.Fatalf("File corrupted?")
 	}
 
+	var pd message.Photo
 	sha := sha256.Sum256([]byte(slurp))
-	// Is this photo already known?
-	for _, pd := range photoData {
-		if bytes.Equal(sha[:], pd.GetSha256Sum()) {
-			return &pd
-		}
+	if found := photoData.Lookup(sha[:], &pd); found {
+		return &pd, true
 	}
 
 	err = ioutil.WriteFile(attr.Name, slurp, 0644)
@@ -117,28 +101,17 @@ func getPhotoInfo(attr *storage.ObjectAttrs) *message.Photo {
 
 	photo, err := util.IdentifyPhoto(attr.Name, attr.MD5, sha[:])
 	if err != nil {
-		log.Fatalf("Failed to read file: %v", err)
-	}
-
-	data, err := proto.Marshal(photo)
-	if err != nil {
-		log.Fatalf("Failed to marshal photo proto: %v", err)
+		log.Fatalf("Attempting to identify file: %v", err)
 	}
 
 	log.Printf("Saving metadata\n")
-	wc := client.Bucket(config.MetadataStorageBucket).Object(attr.Name + ".pb").NewWriter(ctx)
-	foo := md5.Sum(data)
-	wc.MD5 = foo[:]
-	if _, err := wc.Write(data); err != nil {
-		log.Fatalf("Failed writing meta data: %v", err)
+	if !dryRun {
+		photoData.Save(ctx, client, photo)
 	}
-	if err := wc.Close(); err != nil {
-		log.Fatalf("Failed closing meta data write: %v", err)
-	}
-	return photo
+	return photo, false
 }
 
-func addPhotoToLongTerm(attr *storage.ObjectAttrs, photo *message.Photo) {
+func addPhotoToLongTerm(attr *storage.ObjectAttrs, photo *message.Photo) bool {
 	longTerm := config.PhotoStorageBucket
 	pname := photo.GetPath()
 
@@ -151,19 +124,31 @@ func addPhotoToLongTerm(attr *storage.ObjectAttrs, photo *message.Photo) {
 	_, err = client.Bucket(longTerm).Object(pname).Attrs(ctx)
 	if err != nil {
 		log.Printf("Copying: %v/%v -> %v/%v\n", attr.Bucket, attr.Name, longTerm, pname)
-		src := client.Bucket(attr.Bucket).Object(attr.Name)
-		dest := client.Bucket(longTerm).Object(pname)
-		_, err = dest.CopierFrom(src).Run(ctx)
-		if err != nil {
-			log.Fatalf("Failed to write file: %v", err)
+		if !dryRun {
+			src := client.Bucket(attr.Bucket).Object(attr.Name)
+			dest := client.Bucket(longTerm).Object(pname)
+			_, err = dest.CopierFrom(src).Run(ctx)
+			if err != nil {
+				log.Fatalf("Failed to write file: %v", err)
+			}
 		}
-		return
+		return false
 	}
 	log.Printf("Already have: %v/%v -> %v/%v\n", attr.Bucket, attr.Name, longTerm, pname)
+	return true
 }
 
-// Download file
-func process(attr *storage.ObjectAttrs) {
-	photo := getPhotoInfo(attr)
-	addPhotoToLongTerm(attr, photo)
+func removePhotoFromQueue(attr *storage.ObjectAttrs) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+
+	log.Printf("Deleting")
+	if !dryRun {
+		if err := client.Bucket(attr.Bucket).Object(attr.Name).Delete(ctx); err != nil {
+			log.Fatalf("Failed to delete: %v", err)
+		}
+	}
 }

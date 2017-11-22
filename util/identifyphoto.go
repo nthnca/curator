@@ -46,6 +46,8 @@ func IdentifyPhoto(path string, md5, sha256 []byte) (*message.Photo, error) {
 	base := filepath.Base(path)
 	key := strings.TrimSuffix(base, ".jpg")
 	key = strings.TrimSuffix(key, ".JPG")
+	sub := strings.Split(key, "-")
+	key = sub[len(sub)-1]
 	if key == base {
 		return nil, fmt.Errorf("Invalid photo name: %v", path)
 	}
