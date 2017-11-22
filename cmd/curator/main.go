@@ -7,6 +7,7 @@ import (
 
 	"github.com/nthnca/curator/cmd/handler/cache"
 	"github.com/nthnca/curator/cmd/handler/name"
+	"github.com/nthnca/curator/cmd/handler/newphotos"
 	"github.com/nthnca/curator/cmd/handler/queue"
 	"github.com/nthnca/curator/cmd/handler/stats"
 	"github.com/nthnca/curator/cmd/handler/update"
@@ -33,7 +34,12 @@ func main() {
 		liveRun = cmd.Flag("liverun", "Live run").Bool()
 	}
 
-	app.Command("sync", "Sync photos on disk to the cloud").Action(
+	app.Command("new", "Process new photos").Action(
+		func(_ *kingpin.ParseContext) error {
+			newphotos.Handler()
+			return nil
+		})
+	app.Command("oldsync", "Sync photos on disk to the cloud").Action(
 		func(_ *kingpin.ParseContext) error {
 			update.Handler()
 			return nil

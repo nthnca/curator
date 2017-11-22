@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/message"
 )
 
@@ -25,6 +26,65 @@ var (
 	reFocalLength    = regexp.MustCompile(`FocalLength=(.*)`)
 	reISOSpeedRating = regexp.MustCompile(`ISOSpeedRatings=(.*)`)
 )
+
+func getCanonicalName(datetime, model, key string) string {
+	datetime = strings.Replace(datetime, ":", "", -1)
+	date := strings.Split(datetime, " ")[0]
+	time := strings.Split(datetime, " ")[1]
+
+	m, ok := config.CameraModels[model]
+	if !ok {
+		log.Fatalf("Unknown camera: %s", model)
+	}
+
+	result := fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, m, key)
+
+	return result
+}
+
+func IdentifyPhoto(path string, md5, sha256 []byte) (*message.Photo, error) {
+	base := filepath.Base(path)
+	key := strings.TrimSuffix(base, ".jpg")
+	key = strings.TrimSuffix(key, ".JPG")
+	if key == base {
+		return nil, fmt.Errorf("Invalid photo name: %v", path)
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to stat file: %v", err)
+	}
+
+	cmd := exec.Command("identify", "-format", "%[exif:*]", path)
+	buffer, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("ImageMagick failed: %v", err)
+	}
+
+	photo := message.Photo{
+		Properties: &message.Photo_PhotoProperties{}}
+
+	photo.Key = key
+	photo.NumBytes = fi.Size()
+	photo.Md5Sum = md5
+	photo.Sha256Sum = sha256
+
+	output := string(buffer[:])
+	photo.Properties.EpochInSeconds = getTime(output, reDateTime)
+	photo.Properties.Width = int32(getInt(output, reWidth))
+	photo.Properties.Height = int32(getInt(output, reHeight))
+	photo.Properties.Make = getString(output, reMake)
+	photo.Properties.Model = getString(output, reModel)
+	photo.Properties.Aperture = getFraction(output, reAperture)
+	photo.Properties.ExposureTime = getFraction(output, reExposureTime)
+	photo.Properties.FocalLength = getFraction(output, reFocalLength)
+	photo.Properties.Iso = int32(getInt(output, reISOSpeedRating))
+
+	photo.Path = getCanonicalName(getString(output, reDateTime),
+		getString(output, reModel), key)
+	photo.Properties.Model = getString(output, reModel)
+	return &photo, nil
+}
 
 func getInt(buffer string, regex *regexp.Regexp) int {
 	m := regex.FindStringSubmatch(buffer)
@@ -90,42 +150,4 @@ func getFraction(buffer string, regex *regexp.Regexp) *message.Fraction {
 	return &message.Fraction{
 		Numerator:   int32(a),
 		Denominator: int32(b)}
-}
-
-func IdentifyPhoto(path string) (*message.Photo, error) {
-	base := filepath.Base(path)
-	key := strings.TrimSuffix(base, ".jpg")
-	if key == base {
-		return nil, fmt.Errorf("Invalid photo name: %v", path)
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to stat file: %v", err)
-	}
-
-	cmd := exec.Command("identify", "-format", "%[exif:*]", path)
-	buffer, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("ImageMagick failed: %v", err)
-	}
-
-	photo := message.Photo{
-		Properties: &message.Photo_PhotoProperties{}}
-
-	photo.Key = key
-	photo.Path = path
-	photo.Bytes = fi.Size()
-
-	output := string(buffer[:])
-	photo.Properties.OriginalEpoch = getTime(output, reDateTime)
-	photo.Properties.Width = int32(getInt(output, reWidth))
-	photo.Properties.Height = int32(getInt(output, reHeight))
-	photo.Properties.Make = getString(output, reMake)
-	photo.Properties.Model = getString(output, reModel)
-	photo.Properties.Iso = int32(getInt(output, reISOSpeedRating))
-	photo.Properties.Aperture = getFraction(output, reAperture)
-	photo.Properties.ExposureTime = getFraction(output, reExposureTime)
-	photo.Properties.FocalLength = getFraction(output, reFocalLength)
-	return &photo, nil
 }

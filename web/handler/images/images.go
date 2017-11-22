@@ -127,7 +127,7 @@ func generateImageSet(ctx context.Context, w http.ResponseWriter) {
 		exp_n, exp_d := prop.GetExposureTime().GetNumerator(),
 			prop.GetExposureTime().GetDenominator()
 		exp_gcd := gcd(exp_n, exp_d)
-		date := time.Unix(prop.GetOriginalEpoch(), 0).Format(time.RFC1123)
+		date := time.Unix(prop.GetEpochInSeconds(), 0).Format(time.RFC1123)
 		date = strings.Replace(date, " 0", " ", -1)
 		date = strings.Join(strings.Split(date, ":")[:2], ":")
 
@@ -136,7 +136,7 @@ func generateImageSet(ctx context.Context, w http.ResponseWriter) {
 			Camera: prop.GetMake() + " " + prop.GetModel(),
 			X:      fmt.Sprintf("%d", prop.GetWidth()),
 			Y:      fmt.Sprintf("%d", prop.GetHeight()),
-			Bytes:  humanize.Bytes(uint64(p.GetBytes())),
+			Bytes:  humanize.Bytes(uint64(p.GetNumBytes())),
 			Aperture: fmt.Sprintf("f/%.1f",
 				float64(prop.GetAperture().GetNumerator())/float64(prop.GetAperture().GetDenominator())),
 			Shutter: fmt.Sprintf("%d/%d", exp_n/exp_gcd, exp_d/exp_gcd),

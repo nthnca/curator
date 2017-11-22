@@ -18,7 +18,7 @@ func Handler() {
 
 	photos, _ := client.GetPhotos(clt)
 	epoch := func(x int) int64 {
-		return photos[x].GetProperties().GetOriginalEpoch()
+		return photos[x].GetProperties().GetEpochInSeconds()
 	}
 	sort.Slice(photos, func(i, j int) bool { return epoch(i) < epoch(j) })
 

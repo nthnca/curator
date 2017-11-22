@@ -10,11 +10,13 @@ message Fraction {
 message Photo {
   string key = 1;
   string path = 2;
-  int64 bytes = 3;
+  int64 num_bytes = 3;
   bool user_hide = 5;
+  bytes md5sum = 6;
+  bytes sha256sum = 7;
 
   message PhotoProperties {
-    int64 original_epoch = 1;
+    int64 epoch_in_seconds = 1;
     int32 width = 2;
     int32 height = 3;
     string make = 4;
@@ -23,7 +25,6 @@ message Photo {
     Fraction exposure_time = 7;
     Fraction focal_length = 8;
     int32 iso = 9;
-    int64 file_size_bytes = 10;
   }
 
   PhotoProperties properties = 4;

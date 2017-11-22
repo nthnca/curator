@@ -47,7 +47,7 @@ func StoreFile(path, key string) {
 func worker(wg *sync.WaitGroup, jobs <-chan string, results chan<- *message.Photo) {
 	defer wg.Done()
 	for j := range jobs {
-		photo, err := util.IdentifyPhoto(j)
+		photo, err := util.IdentifyPhoto(j, nil, nil)
 		if err != nil {
 			log.Printf("%v\n", err)
 			continue
