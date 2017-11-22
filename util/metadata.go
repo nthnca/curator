@@ -15,6 +15,10 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+const (
+	masterFileName = "master.md"
+)
+
 type PhotoInfo struct {
 	Data []*message.Photo
 }
@@ -29,7 +33,7 @@ func (md *PhotoInfo) Lookup(sha256 []byte, photo *message.Photo) bool {
 	return false
 }
 
-func (md *PhotoInfo) Insert(photo *message.Photo) bool {
+func (md *PhotoInfo) insert(photo *message.Photo) bool {
 	var devnull message.Photo
 	if !md.Lookup(photo.GetSha256Sum(), &devnull) {
 		md.Data = append(md.Data, photo)
@@ -38,10 +42,10 @@ func (md *PhotoInfo) Insert(photo *message.Photo) bool {
 	return false
 }
 
-func (md *PhotoInfo) InsertAll(photos []*message.Photo) bool {
+func (md *PhotoInfo) insertAll(photos []*message.Photo) bool {
 	yep := false
 	for _, iter := range photos {
-		yep = md.Insert(iter) || yep
+		yep = md.insert(iter) || yep
 	}
 	return yep
 }
@@ -59,7 +63,7 @@ func (md *PhotoInfo) SaveAll(ctx context.Context, client *storage.Client, photos
 		set.Photo = append(set.Photo, photo)
 	}
 
-	md.save(ctx, client, "master.md", &set)
+	md.save(ctx, client, masterFileName, &set)
 }
 
 func (md *PhotoInfo) save(ctx context.Context, client *storage.Client, filename string, photos *message.PhotoSet) {
@@ -68,7 +72,7 @@ func (md *PhotoInfo) save(ctx context.Context, client *storage.Client, filename 
 		log.Fatalf("Failed to marshal photo set proto: %v", err)
 	}
 
-	wc := client.Bucket(config.MetadataStorageBucket).Object(filename).NewWriter(ctx)
+	wc := client.Bucket(config.PhotoInfoBucket).Object(filename).NewWriter(ctx)
 	checksum := md5.Sum(data)
 	wc.MD5 = checksum[:]
 	if _, err := wc.Write(data); err != nil {
@@ -81,12 +85,12 @@ func (md *PhotoInfo) save(ctx context.Context, client *storage.Client, filename 
 
 func (md *PhotoInfo) Load(ctx context.Context, client *storage.Client) {
 	ch := make(chan PhotoInfoFileInfo)
-	ps := loadPhotoInfo(ctx, client, config.MetadataStorageBucket, "master.md")
-	go loadextras(ctx, client, ch)
+	ps := loadPhotoInfo(ctx, client, config.PhotoInfoBucket, masterFileName)
+	go loadExtras(ctx, client, ch)
 	md.Data = append(md.Data, ps.Photo...)
 	needSave := false
 	for out := range ch {
-		if !md.InsertAll(out.photo.Photo) {
+		if !md.insertAll(out.photo.Photo) {
 			file := *(out.file)
 			go func() {
 				if err := client.Bucket(file.Bucket).Object(file.Name).Delete(ctx); err != nil {
@@ -129,7 +133,7 @@ func loadPhotoInfo(ctx context.Context, client *storage.Client, bucketname, file
 	return &ps
 }
 
-func loadextras(ctx context.Context, client *storage.Client, ch chan<- PhotoInfoFileInfo) {
+func loadExtras(ctx context.Context, client *storage.Client, ch chan<- PhotoInfoFileInfo) {
 	var wg sync.WaitGroup
 	abc := make(chan *storage.ObjectAttrs)
 	for i := 0; i < 50; i++ {
@@ -143,7 +147,7 @@ func loadextras(ctx context.Context, client *storage.Client, ch chan<- PhotoInfo
 		}()
 	}
 
-	meta := client.Bucket(config.MetadataStorageBucket)
+	meta := client.Bucket(config.PhotoInfoBucket)
 	for it := meta.Objects(ctx, nil); ; {
 		obj, err := it.Next()
 		if err == iterator.Done {
@@ -152,12 +156,11 @@ func loadextras(ctx context.Context, client *storage.Client, ch chan<- PhotoInfo
 		if err != nil {
 			log.Fatalf("Failed to iterate through objects: %v", err)
 		}
-		if obj.Name == "master.md" {
+		if obj.Name == masterFileName {
 			continue
 		}
 
 		abc <- obj
-
 	}
 	close(abc)
 	wg.Wait()
