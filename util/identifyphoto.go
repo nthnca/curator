@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/data/message"
 )
 
@@ -27,10 +26,10 @@ var (
 	reISOSpeedRating = regexp.MustCompile(`ISOSpeedRatings=(.*)`)
 )
 
-func getInt32(buffer string, regex *regexp.Regexp) *int32 {
+func getInt(buffer string, regex *regexp.Regexp) int {
 	m := regex.FindStringSubmatch(buffer)
 	if len(m) != 2 {
-		return nil
+		return 0
 	}
 
 	v, err := strconv.Atoi(strings.Split(m[1], ",")[0])
@@ -38,22 +37,22 @@ func getInt32(buffer string, regex *regexp.Regexp) *int32 {
 		log.Fatalf("%v", err)
 	}
 
-	return proto.Int(v)
+	return v
 }
 
-func getString(buffer string, regex *regexp.Regexp) *string {
+func getString(buffer string, regex *regexp.Regexp) string {
 	m := regex.FindStringSubmatch(buffer)
 	if len(m) != 2 {
-		return nil
+		return ""
 	}
 
-	return proto.String(m[1])
+	return m[1]
 }
 
-func getTime(buffer string, regex *regexp.Regexp) *int64 {
+func getTime(buffer string, regex *regexp.Regexp) int64 {
 	m := regex.FindStringSubmatch(buffer)
 	if len(m) != 2 {
-		return nil
+		return 0
 	}
 
 	a := m[1]
@@ -65,7 +64,7 @@ func getTime(buffer string, regex *regexp.Regexp) *int64 {
 		log.Fatalf("%v", err)
 	}
 
-	return proto.Int64(c.Unix())
+	return c.Unix()
 }
 
 func getFraction(buffer string, regex *regexp.Regexp) *message.Fraction {
@@ -89,8 +88,8 @@ func getFraction(buffer string, regex *regexp.Regexp) *message.Fraction {
 	}
 
 	return &message.Fraction{
-		Numerator:   proto.Int(a),
-		Denominator: proto.Int(b)}
+		Numerator:   int32(a),
+		Denominator: int32(b)}
 }
 
 func IdentifyPhoto(path string) (*message.Photo, error) {
@@ -114,17 +113,17 @@ func IdentifyPhoto(path string) (*message.Photo, error) {
 	photo := message.Photo{
 		Properties: &message.Photo_PhotoProperties{}}
 
-	photo.Key = proto.String(key)
-	photo.Path = proto.String(path)
-	photo.Bytes = proto.Int64(fi.Size())
+	photo.Key = key
+	photo.Path = path
+	photo.Bytes = fi.Size()
 
 	output := string(buffer[:])
 	photo.Properties.OriginalEpoch = getTime(output, reDateTime)
-	photo.Properties.Width = getInt32(output, reWidth)
-	photo.Properties.Height = getInt32(output, reHeight)
+	photo.Properties.Width = int32(getInt(output, reWidth))
+	photo.Properties.Height = int32(getInt(output, reHeight))
 	photo.Properties.Make = getString(output, reMake)
 	photo.Properties.Model = getString(output, reModel)
-	photo.Properties.Iso = getInt32(output, reISOSpeedRating)
+	photo.Properties.Iso = int32(getInt(output, reISOSpeedRating))
 	photo.Properties.Aperture = getFraction(output, reAperture)
 	photo.Properties.ExposureTime = getFraction(output, reExposureTime)
 	photo.Properties.FocalLength = getFraction(output, reFocalLength)

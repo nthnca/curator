@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/data/client"
 	"github.com/nthnca/curator/data/message"
@@ -81,11 +80,11 @@ func processImageResults(ctx context.Context, r *http.Request) {
 
 	clt := datastore.NewGaeClient(ctx)
 	test := message.Comparison{
-		Epoch: proto.Int64(time.Now().Unix())}
+		Epoch: time.Now().Unix()}
 	for _, e1 := range ir {
 		if e1.Flag == 1 {
 			p, _ := client.GetPhoto(clt, e1.ID)
-			p.UserHide = proto.Bool(true)
+			p.UserHide = true
 			client.UpdatePhoto(clt, e1.ID, &p)
 		}
 		for _, e2 := range ir {
@@ -93,9 +92,9 @@ func processImageResults(ctx context.Context, r *http.Request) {
 				continue
 			}
 			test.Entry = append(test.Entry, &message.ComparisonEntry{
-				Photo1: proto.String(e1.ID),
-				Photo2: proto.String(e2.ID),
-				Score:  proto.Int32(int32(e1.Result - e2.Result))})
+				Photo1: e1.ID,
+				Photo2: e2.ID,
+				Score:  int32(e1.Result - e2.Result)})
 		}
 	}
 	if len(test.Entry) > 0 {
