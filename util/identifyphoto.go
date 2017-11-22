@@ -28,18 +28,20 @@ var (
 )
 
 func getCanonicalName(datetime, model, key string) string {
-	datetime = strings.Replace(datetime, ":", "", -1)
-	date := strings.Split(datetime, " ")[0]
-	time := strings.Split(datetime, " ")[1]
+	split := strings.Split(strings.Replace(datetime, ":", "", -1), " ")
+	if len(split) != 2 {
+		return ""
+	}
+
+	date := split[0]
+	time := split[1]
 
 	m, ok := config.CameraModels[model]
 	if !ok {
 		log.Fatalf("Unknown camera: %s", model)
 	}
 
-	result := fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, m, key)
-
-	return result
+	return fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, m, key)
 }
 
 func IdentifyPhoto(path string, md5, sha256 []byte) (*message.Photo, error) {
@@ -84,6 +86,10 @@ func IdentifyPhoto(path string, md5, sha256 []byte) (*message.Photo, error) {
 
 	photo.Path = getCanonicalName(getString(output, reDateTime),
 		getString(output, reModel), key)
+	if photo.Path == "" {
+		return nil, fmt.Errorf("No date for photo")
+	}
+
 	photo.Properties.Model = getString(output, reModel)
 	return &photo, nil
 }

@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
@@ -54,7 +57,8 @@ func (md *PhotoInfo) Save(ctx context.Context, client *storage.Client, photo *me
 	set := message.PhotoSet{}
 	set.Photo = append(set.Photo, photo)
 
-	md.save(ctx, client, "file."+photo.GetKey()+".md", &set)
+	name := fmt.Sprintf("file.%s.%d.md", hex.EncodeToString(photo.GetSha256Sum()), time.Now().Unix())
+	md.save(ctx, client, name, &set)
 }
 
 func (md *PhotoInfo) SaveAll(ctx context.Context, client *storage.Client, photos []*message.Photo) {

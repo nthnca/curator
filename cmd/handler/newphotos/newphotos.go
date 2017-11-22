@@ -37,6 +37,12 @@ func Handler() {
 	log.Printf("PhotoInfo read took %v seconds",
 		float64(time.Now().UnixNano()-t)/1000000000.0)
 
+	/*
+		for _, iter := range photoData.Data {
+			fmt.Printf("%s\n", hex.EncodeToString(iter.GetSha256Sum()))
+		}
+	*/
+
 	for it := client.Buckets(ctx, config.PhotoQueueProject); ; {
 		bktiter, err := it.Next()
 		if err == iterator.Done {
@@ -57,7 +63,10 @@ func Handler() {
 			}
 
 			photo, haveInfo := getPhotoInfo(obj)
-			havePhoto := addPhotoToLongTerm(obj, photo)
+			havePhoto := false
+			if photo != nil {
+				havePhoto = addPhotoToLongTerm(obj, photo)
+			}
 
 			if haveInfo && havePhoto {
 				removePhotoFromQueue(obj)
@@ -102,7 +111,8 @@ func getPhotoInfo(attr *storage.ObjectAttrs) (*message.Photo, bool) {
 
 	photo, err := util.IdentifyPhoto(attr.Name, attr.MD5, sha[:])
 	if err != nil {
-		log.Fatalf("Attempting to identify file: %v", err)
+		log.Printf("Attempting to identify file: %v", err)
+		return nil, false
 	}
 
 	if err := os.Remove(attr.Name); err != nil {
