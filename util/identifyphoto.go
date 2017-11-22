@@ -29,16 +29,16 @@ var (
 
 func getCanonicalName(datetime, model, key string) string {
 	split := strings.Split(strings.Replace(datetime, ":", "", -1), " ")
-	if len(split) != 2 {
-		return ""
+	date := "00000000"
+	time := "000000"
+	if len(split) == 2 {
+		date = split[0]
+		time = split[1]
 	}
-
-	date := split[0]
-	time := split[1]
 
 	m, ok := config.CameraModels[model]
 	if !ok {
-		log.Fatalf("Unknown camera: %s", model)
+		m = "UNKNOWN"
 	}
 
 	return fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, m, key)
