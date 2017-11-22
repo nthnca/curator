@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
-	"fmt"
 	"io/ioutil"
 	"log"
-	"time"
+	"sync"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
@@ -16,11 +15,11 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-type Metadata struct {
+type PhotoInfo struct {
 	Data []*message.Photo
 }
 
-func (md *Metadata) Lookup(sha256 []byte, photo *message.Photo) bool {
+func (md *PhotoInfo) Lookup(sha256 []byte, photo *message.Photo) bool {
 	for _, iter := range md.Data {
 		if bytes.Equal(sha256[:], iter.GetSha256Sum()) {
 			*photo = *iter
@@ -30,24 +29,40 @@ func (md *Metadata) Lookup(sha256 []byte, photo *message.Photo) bool {
 	return false
 }
 
-func (md *Metadata) Save(ctx context.Context, client *storage.Client, photo *message.Photo) {
+func (md *PhotoInfo) Insert(photo *message.Photo) bool {
+	var devnull message.Photo
+	if !md.Lookup(photo.GetSha256Sum(), &devnull) {
+		md.Data = append(md.Data, photo)
+		return true
+	}
+	return false
+}
+
+func (md *PhotoInfo) InsertAll(photos []*message.Photo) bool {
+	yep := false
+	for _, iter := range photos {
+		yep = md.Insert(iter) || yep
+	}
+	return yep
+}
+
+func (md *PhotoInfo) Save(ctx context.Context, client *storage.Client, photo *message.Photo) {
 	set := message.PhotoSet{}
 	set.Photo = append(set.Photo, photo)
 
 	md.save(ctx, client, "file."+photo.GetKey()+".md", &set)
 }
 
-func (md *Metadata) SaveAll(ctx context.Context, client *storage.Client, photos []*message.Photo) {
+func (md *PhotoInfo) SaveAll(ctx context.Context, client *storage.Client, photos []*message.Photo) {
 	set := message.PhotoSet{}
 	for _, photo := range photos {
 		set.Photo = append(set.Photo, photo)
 	}
 
-	t := time.Now().Unix()
-	md.save(ctx, client, fmt.Sprintf("set.%d.md", t), &set)
+	md.save(ctx, client, "master.md", &set)
 }
 
-func (md *Metadata) save(ctx context.Context, client *storage.Client, filename string, photos *message.PhotoSet) {
+func (md *PhotoInfo) save(ctx context.Context, client *storage.Client, filename string, photos *message.PhotoSet) {
 	data, err := proto.Marshal(photos)
 	if err != nil {
 		log.Fatalf("Failed to marshal photo set proto: %v", err)
@@ -64,7 +79,70 @@ func (md *Metadata) save(ctx context.Context, client *storage.Client, filename s
 	}
 }
 
-func (md *Metadata) Load(ctx context.Context, client *storage.Client) {
+func (md *PhotoInfo) Load(ctx context.Context, client *storage.Client) {
+	ch := make(chan PhotoInfoFileInfo)
+	ps := loadPhotoInfo(ctx, client, config.MetadataStorageBucket, "master.md")
+	go loadextras(ctx, client, ch)
+	md.Data = append(md.Data, ps.Photo...)
+	needSave := false
+	for out := range ch {
+		if !md.InsertAll(out.photo.Photo) {
+			file := *(out.file)
+			go func() {
+				if err := client.Bucket(file.Bucket).Object(file.Name).Delete(ctx); err != nil {
+					log.Fatalf("Failed to delete: %v", err)
+				}
+			}()
+
+		} else {
+			needSave = true
+		}
+	}
+	log.Printf("Loaded %d PhotoInfo entries.", len(md.Data))
+	if needSave {
+		md.SaveAll(ctx, client, md.Data)
+	}
+}
+
+type PhotoInfoFileInfo struct {
+	photo *message.PhotoSet
+	file  *storage.ObjectAttrs
+}
+
+func loadPhotoInfo(ctx context.Context, client *storage.Client, bucketname, filename string) *message.PhotoSet {
+
+	reader, err := client.Bucket(bucketname).Object(filename).NewReader(ctx)
+	if err != nil {
+		log.Fatalf("Failed to create reader: %v", err)
+	}
+
+	slurp, err := ioutil.ReadAll(reader)
+	reader.Close()
+	if err != nil {
+		log.Fatalf("Failed to read PhotoInfo: %v", err)
+	}
+
+	var ps message.PhotoSet
+	if err := proto.Unmarshal(slurp, &ps); err != nil {
+		log.Fatalf("Failed to decode proto: %v", err)
+	}
+	return &ps
+}
+
+func loadextras(ctx context.Context, client *storage.Client, ch chan<- PhotoInfoFileInfo) {
+	var wg sync.WaitGroup
+	abc := make(chan *storage.ObjectAttrs)
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for obj := range abc {
+				ps := loadPhotoInfo(ctx, client, obj.Bucket, obj.Name)
+				ch <- PhotoInfoFileInfo{ps, obj}
+			}
+		}()
+	}
+
 	meta := client.Bucket(config.MetadataStorageBucket)
 	for it := meta.Objects(ctx, nil); ; {
 		obj, err := it.Next()
@@ -74,26 +152,14 @@ func (md *Metadata) Load(ctx context.Context, client *storage.Client) {
 		if err != nil {
 			log.Fatalf("Failed to iterate through objects: %v", err)
 		}
-
-		reader, err := client.Bucket(config.MetadataStorageBucket).Object(obj.Name).NewReader(ctx)
-		if err != nil {
-			log.Fatalf("Failed to create reader: %v", err)
+		if obj.Name == "master.md" {
+			continue
 		}
 
-		slurp, err := ioutil.ReadAll(reader)
-		reader.Close()
-		if err != nil {
-			log.Fatalf("Failed to read metadata: %v", err)
-		}
+		abc <- obj
 
-		var ps message.PhotoSet
-		if err := proto.Unmarshal(slurp, &ps); err != nil {
-			log.Fatalf("Failed to decode proto: %v", err)
-		}
-		md.Data = append(md.Data, ps.Photo...)
 	}
-
-	log.Printf("Loaded %d metadata entries.", len(md.Data))
-
-	//	md.SaveAll(ctx, client, md.Data)
+	close(abc)
+	wg.Wait()
+	close(ch)
 }

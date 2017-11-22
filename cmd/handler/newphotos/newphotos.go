@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	photoData util.Metadata
+	photoData util.PhotoInfo
 )
 
 func Handler() {
@@ -33,7 +33,7 @@ func Handler() {
 
 	t := time.Now().UnixNano()
 	photoData.Load(ctx, client)
-	log.Printf("Metadata read took %v seconds",
+	log.Printf("PhotoInfo read took %v seconds",
 		float64(time.Now().UnixNano()-t)/1000000000.0)
 
 	for it := client.Buckets(ctx, config.PhotoQueueProject); ; {
@@ -104,7 +104,7 @@ func getPhotoInfo(attr *storage.ObjectAttrs) (*message.Photo, bool) {
 		log.Fatalf("Attempting to identify file: %v", err)
 	}
 
-	log.Printf("Saving metadata\n")
+	log.Printf("Saving PhotoInfo\n")
 	if !dryRun {
 		photoData.Save(ctx, client, photo)
 	}
