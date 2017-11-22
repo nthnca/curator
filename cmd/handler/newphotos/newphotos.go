@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -102,6 +103,10 @@ func getPhotoInfo(attr *storage.ObjectAttrs) (*message.Photo, bool) {
 	photo, err := util.IdentifyPhoto(attr.Name, attr.MD5, sha[:])
 	if err != nil {
 		log.Fatalf("Attempting to identify file: %v", err)
+	}
+
+	if err := os.Remove(attr.Name); err != nil {
+		log.Fatalf("Attempting to remove file: %v", err)
 	}
 
 	log.Printf("Saving PhotoInfo\n")
