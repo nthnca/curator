@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	configPath    = "~/curator.pb.ascii"
 	StorageBucket = ""
 	ProjectID     = ""
 	PhotoPath     = ""
@@ -56,8 +55,8 @@ func PhotoInfoBucket() string {
 
 func parse() {
 	once.Do(func() {
-		config, err := ioutil.ReadFile(filepath.Join(os.Getenv("HOME"),
-			".curator.pb.ascii"))
+		config, err := ioutil.ReadFile(filepath.Join(
+			os.Getenv("HOME"), ".curator.pb.ascii"))
 		if err != nil {
 			log.Fatalf("Failed to read config: %v", err)
 		}

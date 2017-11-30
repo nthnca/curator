@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nthnca/curator/cmd/handler/cache"
-	"github.com/nthnca/curator/cmd/handler/name"
 	"github.com/nthnca/curator/cmd/handler/newphotos"
 	"github.com/nthnca/curator/cmd/handler/queue"
 	"github.com/nthnca/curator/cmd/handler/stats"
@@ -23,16 +22,6 @@ func main() {
 		"curator",
 		"Photo organizational system that run in Google AppEngine")
 	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
-
-	{
-		var liveRun *bool
-		cmd := app.Command("name", "Process photos in current directory and add to repo")
-		cmd.Action(func(_ *kingpin.ParseContext) error {
-			name.Handler(config.PhotoPath, *liveRun)
-			return nil
-		})
-		liveRun = cmd.Flag("liverun", "Live run").Bool()
-	}
 
 	app.Command("new", "Process new photos").Action(
 		func(_ *kingpin.ParseContext) error {
