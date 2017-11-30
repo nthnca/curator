@@ -76,7 +76,7 @@ func (md *PhotoInfo) save(ctx context.Context, client *storage.Client, filename 
 		log.Fatalf("Failed to marshal photo set proto: %v", err)
 	}
 
-	wc := client.Bucket(config.PhotoInfoBucket).Object(filename).NewWriter(ctx)
+	wc := client.Bucket(config.Get().PhotoInfoBucket).Object(filename).NewWriter(ctx)
 	checksum := md5.Sum(data)
 	wc.MD5 = checksum[:]
 	if _, err := wc.Write(data); err != nil {
@@ -89,7 +89,7 @@ func (md *PhotoInfo) save(ctx context.Context, client *storage.Client, filename 
 
 func (md *PhotoInfo) Load(ctx context.Context, client *storage.Client) {
 	ch := make(chan PhotoInfoFileInfo)
-	ps := loadPhotoInfo(ctx, client, config.PhotoInfoBucket, masterFileName)
+	ps := loadPhotoInfo(ctx, client, config.Get().PhotoInfoBucket, masterFileName)
 	go loadExtras(ctx, client, ch)
 	md.Data = append(md.Data, ps.Photo...)
 	needSave := false
@@ -151,7 +151,7 @@ func loadExtras(ctx context.Context, client *storage.Client, ch chan<- PhotoInfo
 		}()
 	}
 
-	meta := client.Bucket(config.PhotoInfoBucket)
+	meta := client.Bucket(config.Get().PhotoInfoBucket)
 	for it := meta.Objects(ctx, nil); ; {
 		obj, err := it.Next()
 		if err == iterator.Done {

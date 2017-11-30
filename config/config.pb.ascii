@@ -1,0 +1,11 @@
+photo_queue_bucket: "photo-queue-bucket"
+photo_info_bucket: "photo-storage-meta-bucket"
+photo_storage_bucket: "photo-storage-bucket"
+camera_models: <
+  exif_model: "Camera 1"
+  abbreviation: "Cam1"
+>
+camera_models: <
+  exif_model: "Camera 2"
+  abbreviation: "Cam2"
+>

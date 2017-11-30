@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package message;
+
+message Config {
+  string photo_queue_bucket = 1;
+  string photo_storage_bucket = 2;
+  string photo_info_bucket = 3;
+
+  repeated CameraModels camera_models = 4;
+}
+
+message CameraModels {
+  string exif_model = 1;
+  string abbreviation = 2;
+}

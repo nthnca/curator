@@ -43,7 +43,7 @@ func Handler() {
 		}
 	*/
 
-	for it := client.Buckets(ctx, config.PhotoQueueProject); ; {
+	for it := client.Buckets(ctx, config.Get().PhotoQueueBucket); ; {
 		bktiter, err := it.Next()
 		if err == iterator.Done {
 			break
@@ -127,7 +127,7 @@ func getPhotoInfo(attr *storage.ObjectAttrs) (*message.Photo, bool) {
 }
 
 func addPhotoToLongTerm(attr *storage.ObjectAttrs, photo *message.Photo) bool {
-	longTerm := config.PhotoStorageBucket
+	longTerm := config.Get().PhotoStorageBucket
 	pname := photo.GetPath()
 
 	ctx := context.Background()
