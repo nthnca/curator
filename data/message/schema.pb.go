@@ -6,7 +6,6 @@ Package message is a generated protocol buffer package.
 
 It is generated from these files:
 	schema.proto
-	config.proto
 
 It has these top-level messages:
 	Fraction
@@ -15,8 +14,6 @@ It has these top-level messages:
 	ComparisonEntry
 	Comparison
 	ComparisonSet
-	Config
-	CameraModels
 */
 package message
 

@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -43,7 +44,7 @@ func Handler() {
 		}
 	*/
 
-	for it := client.Buckets(ctx, config.Get().PhotoQueueBucket); ; {
+	for it := client.Buckets(ctx, config.PhotoQueueBucket()); ; {
 		bktiter, err := it.Next()
 		if err == iterator.Done {
 			break
@@ -104,18 +105,21 @@ func getPhotoInfo(attr *storage.ObjectAttrs) (*message.Photo, bool) {
 		return &pd, true
 	}
 
-	err = ioutil.WriteFile(attr.Name, slurp, 0644)
+	sub := strings.Split(attr.Name, "/")
+	name := sub[len(sub)-1]
+
+	err = ioutil.WriteFile(name, slurp, 0644)
 	if err != nil {
 		log.Fatalf("Failed to write file: %v", err)
 	}
 
-	photo, err := util.IdentifyPhoto(attr.Name, attr.MD5, sha[:])
+	photo, err := util.IdentifyPhoto(name, attr.MD5, sha[:])
 	if err != nil {
 		log.Printf("Attempting to identify file: %v", err)
 		return nil, false
 	}
 
-	if err := os.Remove(attr.Name); err != nil {
+	if err := os.Remove(name); err != nil {
 		log.Fatalf("Attempting to remove file: %v", err)
 	}
 
@@ -127,7 +131,7 @@ func getPhotoInfo(attr *storage.ObjectAttrs) (*message.Photo, bool) {
 }
 
 func addPhotoToLongTerm(attr *storage.ObjectAttrs, photo *message.Photo) bool {
-	longTerm := config.Get().PhotoStorageBucket
+	longTerm := config.PhotoStorageBucket()
 	pname := photo.GetPath()
 
 	ctx := context.Background()

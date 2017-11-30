@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package message;
+package config;
 
-message Config {
+message CuratorConfig {
   string photo_queue_bucket = 1;
   string photo_storage_bucket = 2;
   string photo_info_bucket = 3;

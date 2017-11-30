@@ -36,10 +36,7 @@ func getCanonicalName(datetime, model, key string) string {
 		time = split[1]
 	}
 
-	m, ok := config.CameraModels[model]
-	if !ok {
-		m = "UNKNOWN"
-	}
+	m := config.CameraModelAbbreviation(model)
 
 	return fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, m, key)
 }
