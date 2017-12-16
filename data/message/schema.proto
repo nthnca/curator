@@ -2,10 +2,43 @@ syntax = "proto3";
 
 package message;
 
-message Fraction {
-  int32 numerator = 1;
-  int32 denominator = 2;
+message Media {
+  PhotoInfo photo = 1;
+  string name = 2;  // Normalized name
+  repeated FileInfo file = 3;
+  bool deleted = 4;
 }
+
+/* Information about the original media capture, this information shouldn't change. */
+message PhotoInfo {
+  int64 datetime_seconds_since_epoch = 1;
+  string make = 2;
+  string model = 3;
+  Fraction aperture = 4;
+  Fraction exposure_time = 5;
+  Fraction focal_length = 6;
+  int32 iso = 7;
+  int32 width = 8; // May not be the same for all versions
+  int32 height = 9; // May not be the same for all versions
+}
+
+enum FileType {
+  JPG = 0;
+  RAW = 1;
+}
+
+message FileInfo {
+  string filename = 1;
+  FileType type = 2;
+  bytes md5sum = 3;
+  bytes sha256sum = 4;
+  int64 size_in_bytes = 5;
+}
+
+message MediaSet {
+  repeated Media media = 1;
+}
+
 
 message Photo {
   string key = 1;
@@ -28,6 +61,11 @@ message Photo {
   }
 
   PhotoProperties properties = 4;
+}
+
+message Fraction {
+  int32 numerator = 1;
+  int32 denominator = 2;
 }
 
 message PhotoSet {
