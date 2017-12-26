@@ -55,8 +55,9 @@ func PhotoInfoBucket() string {
 
 func parse() {
 	once.Do(func() {
-		config, err := ioutil.ReadFile(filepath.Join(
-			os.Getenv("HOME"), ".curator.pb.ascii"))
+		path := filepath.Join(os.Getenv("HOME"), ".curator.pb.ascii")
+		log.Printf("Loading config from: %s", path)
+		config, err := ioutil.ReadFile(filepath.Join(path))
 		if err != nil {
 			log.Fatalf("Failed to read config: %v", err)
 		}
