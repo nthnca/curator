@@ -1,4 +1,4 @@
-package util
+package exif
 
 import (
 	"fmt"
@@ -24,8 +24,8 @@ var (
 	reISOSpeedRating = regexp.MustCompile(`ISOSpeedRatings=(.*)`)
 )
 
-// ParsePhotoInfo populates a PhotoInfo protobuf with the exif data from the photo at 'path'.
-func ParsePhotoInfo(path string) (*message.PhotoInfo, error) {
+// Parse populates a PhotoInfo protobuf with the exif data from the photo at 'path'.
+func Parse(path string) (*message.PhotoInfo, error) {
 	cmd := exec.Command("identify", "-format", "%[exif:*]", path)
 	buffer, err := cmd.Output()
 	if err != nil {

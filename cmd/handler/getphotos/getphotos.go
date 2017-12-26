@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"cloud.google.com/go/storage"
-	"github.com/nthnca/curator/data/mediainfo"
 	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/mediainfo/store"
 	"github.com/nthnca/curator/util"
 )
 
@@ -27,9 +27,9 @@ func Handler() {
 
 	photoData.Load(ctx, client)
 
-	mi, err := mediainfo.NewMediaInfo(ctx, client, "c1410a-photo-storage-info")
+	mi, err := store.New(ctx, client, "c1410a-photo-storage-info")
 	if err != nil {
-		log.Fatalf("NewMediaInfo failed: %v", err)
+		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
 	for _, e := range photoData.Data {

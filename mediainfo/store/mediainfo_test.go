@@ -1,4 +1,4 @@
-package mediainfo
+package store
 
 import (
 	"context"
@@ -81,7 +81,7 @@ func baseCapabilities(ctx context.Context, client *storage.Client, bucketName st
 
 	log.Printf("baseCapabilities")
 	{
-		mi, err := NewMediaInfo(ctx, client, bucketName)
+		mi, err := New(ctx, client, bucketName)
 		if err != nil {
 			log.Fatalf("NewMediaInfo failed: %v", err)
 		}
@@ -97,7 +97,7 @@ func baseCapabilities(ctx context.Context, client *storage.Client, bucketName st
 	// Note that at this point we don't even have a master file.
 	time.Sleep(2 * time.Second)
 	log.Printf("reload")
-	mi, err := NewMediaInfo(ctx, client, bucketName)
+	mi, err := New(ctx, client, bucketName)
 	if err != nil {
 		log.Fatalf("NewMediaInfo failed: %v", err)
 	}
@@ -110,7 +110,7 @@ func baseCapabilities(ctx context.Context, client *storage.Client, bucketName st
 	log.Printf("Adding 50 entries took %v seconds",
 		float64(time.Now().UnixNano()-t)/1000000000.0)
 
-	mi, err = NewMediaInfo(ctx, client, bucketName)
+	mi, err = New(ctx, client, bucketName)
 	if err != nil {
 		log.Fatalf("NewMediaInfo failed: %v", err)
 	}

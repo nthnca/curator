@@ -1,5 +1,5 @@
 // Package mediainfo.
-package mediainfo
+package store
 
 import (
 	"context"
@@ -31,14 +31,14 @@ type MediaInfo struct {
 
 // NewMediaInfo will load the Media objects from the given bucket and return a MediaInfo object
 // that will allow you to continue to add Media objects to this bucket.
-func NewMediaInfo(ctx context.Context, client *storage.Client, bucketName string) (*MediaInfo, error) {
+func New(ctx context.Context, client *storage.Client, bucketName string) (*MediaInfo, error) {
 	var mi MediaInfo
 	mi.bucketName = bucketName
 	mi.index = make(map[[32]byte]int)
 
 	if err := load(ctx, client, bucketName, masterFileName, &mi.data); err != nil {
 		if err != storage.ErrObjectNotExist {
-			return nil, fmt.Errorf("loading masterfile: %v", err)
+			return nil, fmt.Errorf("loading masterfile: (%s) %v", bucketName, err)
 		}
 	}
 
