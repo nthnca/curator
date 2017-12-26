@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -21,12 +22,15 @@ const (
 )
 
 var (
+	ctx       context.Context
+	client    *storage.Client
 	mediaInfo *store.MediaInfo
 )
 
 func Handler() {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
+	ctx = context.Background()
+	err := fmt.Errorf("") // Next line can't use :=
+	client, err = storage.NewClient(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -52,6 +56,7 @@ func Handler() {
 		}
 		b.Foo(str[:len(str)-1])
 	}
+	mi.Flush(ctx, client)
 }
 
 type Blah struct {
@@ -72,10 +77,15 @@ func (b *Blah) Foo(line string) {
 		}
 		b, _ := hex.DecodeString(parts[1][6:])
 		p1 := mediaInfo.Get(util.Sha256(b))
-		log.Printf("Delete %q\n", p1.File[0].Filename)
-		p1.TimestampSecondsSinceEpoch = time.Now().Unix()
-		p1.Deleted = true
-		// log.Printf("P1 %+v", p1)
+		if p1.Deleted {
+			log.Printf("Already deleted %q\n", p1.File[0].Filename)
+		} else {
+			log.Printf("Delete %q\n", p1.File[0].Filename)
+			p1.TimestampSecondsSinceEpoch = time.Now().Unix()
+			p1.Deleted = true
+			mediaInfo.Insert(ctx, client, p1)
+			// log.Printf("P1 %+v", p1)
+		}
 	} else {
 		b.inodes = append(b.inodes, parts[0])
 	}

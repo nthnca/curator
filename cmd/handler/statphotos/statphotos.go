@@ -1,9 +1,7 @@
-package getphotos
+package statphotos
 
 import (
 	"context"
-	"encoding/hex"
-	"fmt"
 	"log"
 
 	"cloud.google.com/go/storage"
@@ -23,22 +21,12 @@ func Handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
-	fmt.Printf("mkdir .pics\n")
-	size := len(mi.All())
-	c := 0
-	for i, _ := range mi.All() {
-		iter := mi.All()[size-i-1]
-		if iter.Deleted {
-			continue
+	total := len(mi.All())
+	del := 0
+	for _, y := range mi.All() {
+		if y.Deleted {
+			del++
 		}
-
-		c++
-		if c > 100 {
-			break
-		}
-
-		fmt.Printf("gsutil cp gs://%s/%s .pics/\n",
-			config.PhotoStorageBucket(), hex.EncodeToString(iter.Key))
-		fmt.Printf("ln .pics/%s %s\n", hex.EncodeToString(iter.Key), iter.File[0].Filename)
 	}
+	log.Printf("Photos %d (deleted: %d, total: %d)", total-del, del, total)
 }

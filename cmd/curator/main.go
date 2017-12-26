@@ -5,13 +5,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/nthnca/curator/cmd/handler/cache"
 	"github.com/nthnca/curator/cmd/handler/deletephotos"
 	"github.com/nthnca/curator/cmd/handler/getphotos"
 	"github.com/nthnca/curator/cmd/handler/newphotos"
-	"github.com/nthnca/curator/cmd/handler/queue"
-	"github.com/nthnca/curator/cmd/handler/stats"
-	"github.com/nthnca/curator/cmd/handler/update"
+	"github.com/nthnca/curator/cmd/handler/statphotos"
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/gobuild"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -40,25 +37,33 @@ func main() {
 			deletephotos.Handler()
 			return nil
 		})
-	app.Command("oldsync", "Sync photos on disk to the cloud").Action(
-		func(_ *kingpin.ParseContext) error {
-			update.Handler()
-			return nil
-		})
-	app.Command("cache", "Update datastore caches").Action(
-		func(_ *kingpin.ParseContext) error {
-			cache.Handler()
-			return nil
-		})
-	app.Command("queue", "queue more work items").Action(
-		func(_ *kingpin.ParseContext) error {
-			queue.Handler()
-			return nil
-		})
 	app.Command("stats", "analyze curator data").Action(
 		func(_ *kingpin.ParseContext) error {
-			stats.Handler()
+			statphotos.Handler()
 			return nil
 		})
+
+	/*
+		app.Command("oldsync", "Sync photos on disk to the cloud").Action(
+			func(_ *kingpin.ParseContext) error {
+				update.Handler()
+				return nil
+			})
+		app.Command("cache", "Update datastore caches").Action(
+			func(_ *kingpin.ParseContext) error {
+				cache.Handler()
+				return nil
+			})
+		app.Command("queue", "queue more work items").Action(
+			func(_ *kingpin.ParseContext) error {
+				queue.Handler()
+				return nil
+			})
+		app.Command("stats", "analyze curator data").Action(
+			func(_ *kingpin.ParseContext) error {
+				stats.Handler()
+				return nil
+			})
+	*/
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
