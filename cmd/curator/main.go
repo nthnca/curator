@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nthnca/curator/cmd/handler/cache"
+	"github.com/nthnca/curator/cmd/handler/deletephotos"
 	"github.com/nthnca/curator/cmd/handler/getphotos"
 	"github.com/nthnca/curator/cmd/handler/newphotos"
 	"github.com/nthnca/curator/cmd/handler/queue"
@@ -32,6 +33,11 @@ func main() {
 	app.Command("get", "Create script for copying photos").Action(
 		func(_ *kingpin.ParseContext) error {
 			getphotos.Handler()
+			return nil
+		})
+	app.Command("delete", "Delete photos").Action(
+		func(_ *kingpin.ParseContext) error {
+			deletephotos.Handler()
 			return nil
 		})
 	app.Command("oldsync", "Sync photos on disk to the cloud").Action(

@@ -39,15 +39,11 @@ func Handler() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	t := time.Now().UnixNano()
-	log.Printf("Reading MediaInfo: %s", config.MediaInfoBucket())
 	mi, err := store.New(ctx, client, config.MediaInfoBucket())
 	mediaInfo = mi
 	if err != nil {
 		log.Fatalf("NewMediaInfo failed: %v", err)
 	}
-	log.Printf("Read %d Media objects, took %v seconds",
-		len(mediaInfo.All()), float64(time.Now().UnixNano()-t)/1000000000.0)
 
 	c := 0
 	log.Printf("Looking for photos in: %s", config.PhotoQueueBucket())

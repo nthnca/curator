@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
@@ -30,13 +31,15 @@ type MediaInfo struct {
 	wait       sync.WaitGroup
 }
 
-// NewMediaInfo will load the Media objects from the given bucket and return a MediaInfo object
+// New will load the Media objects from the given bucket and return a MediaInfo object
 // that will allow you to continue to add Media objects to this bucket.
 func New(ctx context.Context, client *storage.Client, bucketName string) (*MediaInfo, error) {
 	var mi MediaInfo
 	mi.bucketName = bucketName
 	mi.index = make(map[[32]byte]int)
 
+	t := time.Now().UnixNano()
+	log.Printf("Reading MediaInfo: %s", bucketName)
 	if err := load(ctx, client, bucketName, masterFileName, &mi.data); err != nil {
 		if err != storage.ErrObjectNotExist {
 			return nil, fmt.Errorf("loading masterfile: (%s) %v", bucketName, err)
@@ -85,6 +88,8 @@ func New(ctx context.Context, client *storage.Client, bucketName string) (*Media
 		mi.insertInternal(ctx, client, m, false)
 	}
 	mi.saveAll(ctx, client)
+	log.Printf("Read %d Media objects, took %v seconds",
+		len(mi.All()), float64(time.Now().UnixNano()-t)/1000000000.0)
 	return &mi, nil
 }
 
@@ -98,6 +103,16 @@ func (mi *MediaInfo) Insert(ctx context.Context, client *storage.Client, media *
 func (mi *MediaInfo) Flush(ctx context.Context, client *storage.Client) {
 	mi.saveAll(ctx, client)
 	mi.wait.Wait()
+}
+
+func (mi *MediaInfo) Get(key [32]byte) *message.Media {
+	var rv message.Media
+	i, ok := mi.index[key]
+	if !ok {
+		return nil
+	}
+	proto.Merge(&rv, mi.data.Media[i])
+	return &rv
 }
 
 func (mi *MediaInfo) All() []*message.Media {

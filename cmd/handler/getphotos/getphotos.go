@@ -18,7 +18,7 @@ func Handler() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	mi, err := store.New(ctx, client, "c1410a-photo-storage-info")
+	mi, err := store.New(ctx, client, config.MediaInfoBucket())
 	if err != nil {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
