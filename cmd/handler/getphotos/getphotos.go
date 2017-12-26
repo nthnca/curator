@@ -50,12 +50,16 @@ func handler() {
 			continue
 		}
 
+		name := util.GetCanonicalName(iter)
+		if filter != "" && filter != name[:len(filter)] {
+			continue
+		}
+
 		c++
 		if max != 0 && c > max {
 			break
 		}
 
-		name := util.GetCanonicalName(iter)
 		fmt.Printf("gsutil cp gs://%s/%s .pics/\n",
 			config.PhotoStorageBucket(), hex.EncodeToString(iter.Key))
 		fmt.Printf("ln .pics/%s %s\n", hex.EncodeToString(iter.Key), name)
@@ -63,4 +67,5 @@ func handler() {
 
 	log.Printf("--filter=%+v", filter)
 	log.Printf("--max=%+v", max)
+	log.Printf("Photos retrieved: %d", c)
 }
