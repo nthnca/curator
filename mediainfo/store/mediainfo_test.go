@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/util"
 	"google.golang.org/api/iterator"
 )
 
@@ -66,9 +67,7 @@ func baseCapabilities(ctx context.Context, client *storage.Client, bucketName st
 		log.Printf("Check time: %d count: %d", time, count)
 		index := make(map[[32]byte]int)
 		for _, e := range mi.All() {
-			var key [32]byte
-			copy(key[:], e.Key)
-			index[key] = 1
+			index[util.Sha256(e.Key)] = 1
 			if e.TimestampSecondsSinceEpoch != time {
 				log.Fatalf("Wrong entry value: %d", e.TimestampSecondsSinceEpoch)
 

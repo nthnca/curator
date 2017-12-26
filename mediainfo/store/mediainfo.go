@@ -14,6 +14,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/util"
 	"google.golang.org/api/iterator"
 )
 
@@ -43,14 +44,7 @@ func New(ctx context.Context, client *storage.Client, bucketName string) (*Media
 	}
 
 	for i, m := range mi.data.Media {
-		if len(m.Key) != 32 {
-			log.Fatalf("Data corrupted? Wrong key length: %d", len(m.Key))
-		}
-
-		var key [32]byte
-		copy(key[:], m.Key)
-
-		mi.index[key] = i
+		mi.index[util.Sha256(m.Key)] = i
 	}
 
 	ch := make(chan *message.Media)
@@ -123,12 +117,7 @@ func debug(fmt string, a ...interface{}) {
 func (mi *MediaInfo) insertInternal(ctx context.Context, client *storage.Client, media *message.Media, write bool) {
 	// debugMedia("Insert", media)
 
-	var key [32]byte
-	if len(media.GetKey()) != 32 {
-		log.Fatalf("Nope")
-	}
-	copy(key[:], media.Key)
-
+	key := util.Sha256(media.Key)
 	i, ok := mi.index[key]
 	if ok {
 		// debugMedia("Found", mi.data.Media[i])

@@ -47,9 +47,8 @@ func Handler() {
 	if err != nil {
 		log.Fatalf("NewMediaInfo failed: %v", err)
 	}
-	log.Printf("Count: %d", len(mediaInfo.All()))
-	log.Printf("PhotoInfo read took %v seconds",
-		float64(time.Now().UnixNano()-t)/1000000000.0)
+	log.Printf("Read %d Media objects, took %v seconds",
+		len(mediaInfo.All()), float64(time.Now().UnixNano()-t)/1000000000.0)
 
 	c := 0
 	log.Printf("Looking for photos in: %s", config.PhotoQueueBucket())
@@ -146,6 +145,7 @@ func processPhotoSet(attr []*storage.ObjectAttrs) {
 	}
 
 	// save meta
+	// TODO: Can't tell if this fails... DANGER
 	mediaInfo.Insert(ctx, client, media)
 
 	// delete files
@@ -161,7 +161,7 @@ func processPhotoSet(attr []*storage.ObjectAttrs) {
 
 func getFileNameForAttr(attr *storage.ObjectAttrs, m *message.Media) string {
 	for _, mf := range m.File {
-		if MD5(mf.Md5Sum) == MD5(attr.MD5) {
+		if util.MD5(mf.Md5Sum) == util.MD5(attr.MD5) {
 			return hex.EncodeToString(mf.Sha256Sum)
 		}
 	}
@@ -260,23 +260,3 @@ func removePhotoFromQueue(attr *storage.ObjectAttrs) {
 	}
 }
 */
-
-func MD5(a []byte) [16]byte {
-	var rv [16]byte
-	if len(a) != 16 {
-		log.Fatalf("Byte array has incorrect size for MD5 (%d)", len(a))
-	}
-
-	copy(rv[:], a)
-	return rv
-}
-
-func Sha256(a []byte) [32]byte {
-	var rv [32]byte
-	if len(a) != 32 {
-		log.Fatalf("Byte array has incorrect size for SHA256 (%d)", len(a))
-	}
-
-	copy(rv[:], a)
-	return rv
-}
