@@ -47,7 +47,7 @@ func PhotoStorageBucket() string {
 	return instance.PhotoStorageBucket
 }
 
-func PhotoInfoBucket() string {
+func MediaInfoBucket() string {
 	parse()
 
 	return instance.PhotoInfoBucket

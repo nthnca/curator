@@ -26,7 +26,6 @@ const (
 )
 
 var (
-	photoData util.PhotoInfo
 	ctx       context.Context
 	client    *storage.Client
 	mediaInfo *store.MediaInfo
@@ -41,8 +40,8 @@ func Handler() {
 	}
 
 	t := time.Now().UnixNano()
-	log.Printf("Reading PhotoInfo: %s", config.PhotoInfoBucket())
-	mi, err := store.New(ctx, client, config.PhotoInfoBucket())
+	log.Printf("Reading MediaInfo: %s", config.MediaInfoBucket())
+	mi, err := store.New(ctx, client, config.MediaInfoBucket())
 	mediaInfo = mi
 	if err != nil {
 		log.Fatalf("NewMediaInfo failed: %v", err)
