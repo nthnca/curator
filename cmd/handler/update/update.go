@@ -13,7 +13,6 @@ import (
 	"github.com/nthnca/curator/data/disk"
 	"github.com/nthnca/curator/data/gcs"
 	"github.com/nthnca/curator/data/message"
-	"github.com/nthnca/curator/util"
 	"github.com/nthnca/datastore"
 )
 
@@ -47,13 +46,15 @@ func StoreFile(path, key string) {
 func worker(wg *sync.WaitGroup, jobs <-chan string, results chan<- *message.Photo) {
 	defer wg.Done()
 	for j := range jobs {
-		photo, err := util.IdentifyPhoto(j, nil, nil)
-		if err != nil {
-			log.Printf("%v\n", err)
-			continue
-		}
+		log.Fatalf("photo, err := util.IdentifyPhoto(j, nil, nil) %v", j)
+		/*
+			if err != nil {
+				log.Printf("%v\n", err)
+				continue
+			}
 
-		results <- photo
+			results <- photo
+		*/
 	}
 }
 

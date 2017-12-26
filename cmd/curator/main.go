@@ -27,11 +27,7 @@ func main() {
 			newphotos.Handler()
 			return nil
 		})
-	app.Command("get", "Create script for copying photos").Action(
-		func(_ *kingpin.ParseContext) error {
-			getphotos.Handler()
-			return nil
-		})
+	getphotos.Register(app)
 	app.Command("delete", "Delete photos").Action(
 		func(_ *kingpin.ParseContext) error {
 			deletephotos.Handler()
@@ -65,5 +61,6 @@ func main() {
 				return nil
 			})
 	*/
+
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }

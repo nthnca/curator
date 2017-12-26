@@ -9,9 +9,27 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/mediainfo/store"
+	"github.com/nthnca/curator/util"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-func Handler() {
+var (
+	filter string
+	max    int
+)
+
+func Register(app *kingpin.Application) {
+	cmd := app.Command("get", "Create script for copying photos")
+	cmd.Action(
+		func(_ *kingpin.ParseContext) error {
+			handler()
+			return nil
+		})
+	cmd.Flag("filter", "description").StringVar(&filter)
+	cmd.Flag("max", "The maximum number of results to return").IntVar(&max)
+}
+
+func handler() {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -33,12 +51,16 @@ func Handler() {
 		}
 
 		c++
-		if c > 100 {
+		if max != 0 && c > max {
 			break
 		}
 
+		name := util.GetCanonicalName(iter)
 		fmt.Printf("gsutil cp gs://%s/%s .pics/\n",
 			config.PhotoStorageBucket(), hex.EncodeToString(iter.Key))
-		fmt.Printf("ln .pics/%s %s\n", hex.EncodeToString(iter.Key), iter.File[0].Filename)
+		fmt.Printf("ln .pics/%s %s\n", hex.EncodeToString(iter.Key), name)
 	}
+
+	log.Printf("--filter=%+v", filter)
+	log.Printf("--max=%+v", max)
 }
