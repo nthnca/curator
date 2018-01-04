@@ -41,7 +41,6 @@ func handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
-	fmt.Printf("mkdir .pics\n")
 	size := len(mi.All())
 	c := 0
 	for i, _ := range mi.All() {
@@ -60,9 +59,7 @@ func handler() {
 			break
 		}
 
-		fmt.Printf("gsutil cp gs://%s/%s .pics/\n",
-			config.PhotoStorageBucket(), hex.EncodeToString(iter.Key))
-		fmt.Printf("ln .pics/%s %s\n", hex.EncodeToString(iter.Key), name)
+		fmt.Printf("%s %s\n", hex.EncodeToString(iter.Key), name)
 	}
 
 	log.Printf("--filter=%+v", filter)

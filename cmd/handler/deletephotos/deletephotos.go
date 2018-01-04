@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -41,52 +40,34 @@ func Handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
-	var b Blah
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		str, err := reader.ReadString('\n')
 		if err == io.EOF {
 			if str != "" {
-				b.Foo(str)
+				Foo(str)
 			}
 			break
 		}
 		if err != nil {
 			log.Fatalf("Failed to create client: %v", err)
 		}
-		b.Foo(str[:len(str)-1])
+
+		// Strip newline off the end.
+		Foo(str[:len(str)-1])
 	}
 	mi.Flush(ctx, client)
 }
 
-type Blah struct {
-	inodes []string
-}
-
-func (b *Blah) Foo(line string) {
-	parts := strings.Split(line, " ")
-	if len(parts) != 2 {
-		return
-	}
-
-	if len(parts[1]) > 6 && parts[1][0:6] == ".pics/" {
-		for _, x := range b.inodes {
-			if x == parts[0] {
-				return
-			}
-		}
-		b, _ := hex.DecodeString(parts[1][6:])
-		p1 := mediaInfo.Get(util.Sha256(b))
-		if p1.Deleted {
-			log.Printf("Already deleted %q\n", p1.File[0].Filename)
-		} else {
-			log.Printf("Delete %q\n", p1.File[0].Filename)
-			p1.TimestampSecondsSinceEpoch = time.Now().Unix()
-			p1.Deleted = true
-			mediaInfo.Insert(ctx, client, p1)
-			// log.Printf("P1 %+v", p1)
-		}
+func Foo(line string) {
+	b, _ := hex.DecodeString(line)
+	p1 := mediaInfo.Get(util.Sha256(b))
+	if p1.Deleted {
+		log.Printf("Already deleted %q\n", p1.File[0].Filename)
 	} else {
-		b.inodes = append(b.inodes, parts[0])
+		log.Printf("Delete %q\n", p1.File[0].Filename)
+		p1.TimestampSecondsSinceEpoch = time.Now().Unix()
+		p1.Deleted = true
+		mediaInfo.Insert(ctx, client, p1)
 	}
 }

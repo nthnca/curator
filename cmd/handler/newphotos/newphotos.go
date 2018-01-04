@@ -74,7 +74,7 @@ func Handler() {
 			}
 			set = append(set, obj)
 			c++
-			if c > 5 {
+			if c > 500 {
 				log.Fatalf("Foo")
 			}
 		}
@@ -168,7 +168,8 @@ func convertToMedia(attr []*storage.ObjectAttrs) (*message.Media, error) {
 	var jpg []*storage.ObjectAttrs
 	var other []*storage.ObjectAttrs
 	for _, a := range attr {
-		if strings.ToLower(suffix(a.Name)) == "jpg" {
+		if strings.ToLower(suffix(a.Name)) == "jpg" ||
+			strings.ToLower(suffix(a.Name)) == "jpeg" {
 			jpg = append(jpg, a)
 		} else {
 			other = append(other, a)
