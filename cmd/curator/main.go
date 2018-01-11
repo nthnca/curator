@@ -28,18 +28,10 @@ func main() {
 	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
 	app.Flag("go", "Actually do things").BoolVar(&actual)
 
-	app.Command("new", "Process new photos").Action(
-		func(_ *kingpin.ParseContext) error {
-			newphotos.Handler()
-			return nil
-		})
+	newphotos.Register(app)
 	getphotos.Register(app)
 	mutatephotos.Register(app, &actual)
-	app.Command("stats", "analyze curator data").Action(
-		func(_ *kingpin.ParseContext) error {
-			statphotos.Handler()
-			return nil
-		})
+	statphotos.Register(app)
 
 	/*
 		app.Command("oldsync", "Sync photos on disk to the cloud").Action(

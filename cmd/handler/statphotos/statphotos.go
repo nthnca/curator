@@ -9,9 +9,18 @@ import (
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/curator/mediainfo/store"
 	"github.com/nthnca/curator/util"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-func Handler() {
+func Register(app *kingpin.Application) {
+	app.Command("stats", "analyze curator data").Action(
+		func(_ *kingpin.ParseContext) error {
+			handler()
+			return nil
+		})
+}
+
+func handler() {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {

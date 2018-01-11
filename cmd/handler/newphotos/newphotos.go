@@ -19,6 +19,7 @@ import (
 	"github.com/nthnca/curator/mediainfo/store"
 	"github.com/nthnca/curator/util"
 	"google.golang.org/api/iterator"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 const (
@@ -31,7 +32,15 @@ var (
 	mediaInfo *store.MediaInfo
 )
 
-func Handler() {
+func Register(app *kingpin.Application) {
+	app.Command("new", "Process new photos").Action(
+		func(_ *kingpin.ParseContext) error {
+			handler()
+			return nil
+		})
+}
+
+func handler() {
 	ctx = context.Background()
 	err := fmt.Errorf("") // Next line can't use :=
 	client, err = storage.NewClient(ctx)
