@@ -51,7 +51,7 @@ func handler() {
 	c := 0
 	for i, _ := range mi.All() {
 		iter := mi.All()[size-i-1]
-		if tags.Match(iter.Tags) {
+		if !tags.Match(iter.Tags) {
 			continue
 		}
 

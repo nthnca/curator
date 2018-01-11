@@ -24,6 +24,7 @@ func main() {
 	app := kingpin.New(
 		"curator",
 		"Photo organizational system that run in Google AppEngine")
+	app.UsageWriter(os.Stdout)
 	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
 	app.Flag("go", "Actually do things").BoolVar(&actual)
 
