@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -22,9 +21,8 @@ var (
 	ctx       context.Context
 	client    *storage.Client
 	mediaInfo *store.MediaInfo
+	tags      util.Tags
 	actual    *bool
-	add       []string
-	remove    []string
 )
 
 func Register(app *kingpin.Application, actualx *bool) {
@@ -35,65 +33,8 @@ func Register(app *kingpin.Application, actualx *bool) {
 			handler()
 			return nil
 		})
-	cmd.Flag("add", "Labels to add").Short('a').StringsVar(&add)
-	cmd.Flag("remove", "Labels to remove").Short('r').StringsVar(&remove)
-}
-
-func validateLabels(add, remove []string) {
-	allowed := make(map[string]bool)
-
-	for _, t := range config.ValidLabels() {
-		allowed[t] = true
-	}
-
-	valid := func(arr []string) {
-		for _, x := range arr {
-			if !allowed[x] {
-				log.Fatalf("Invalid tag: %s", x)
-			}
-		}
-	}
-
-	valid(add)
-	valid(remove)
-
-	duplicates := map[string]bool{}
-
-	dups := func(arr []string) {
-		for _, x := range arr {
-			if duplicates[x] {
-				log.Fatalf("Duplicate tag: %s", x)
-			}
-			duplicates[x] = true
-		}
-	}
-
-	dups(add)
-	dups(remove)
-}
-
-func modifyTags(tags, add, remove []string) ([]string, bool) {
-	changed := false
-	tagMap := make(map[string]bool)
-
-	for _, t := range tags {
-		tagMap[t] = true
-	}
-	for _, t := range add {
-		_, has := tagMap[t]
-		changed = changed || !has
-		tagMap[t] = true
-	}
-	for _, t := range remove {
-		_, has := tagMap[t]
-		changed = changed || has
-		delete(tagMap, t)
-	}
-	var rv []string
-	for t, _ := range tagMap {
-		rv = append(rv, t)
-	}
-	return rv, changed
+	cmd.Flag("add", "Labels to add").Short('a').StringsVar(&tags.A)
+	cmd.Flag("remove", "Labels to remove").Short('r').StringsVar(&tags.B)
 }
 
 func handler() {
@@ -110,28 +51,18 @@ func handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
-	normalize := func(arr []string) []string {
-		var tmp []string
-		for _, t := range arr {
-			tmp = append(tmp, strings.Split(t, ",")...)
-		}
-		return tmp
-	}
+	tags.Normalize()
+	tags.Validate(config.ValidLabels())
 
-	add = normalize(add)
-	remove = normalize(remove)
-
-	validateLabels(add, remove)
-
-	log.Printf("--add %s", add)
-	log.Printf("--remove %s", remove)
+	log.Printf("--add %s", tags.A)
+	log.Printf("--remove %s", tags.B)
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		str, err := reader.ReadString('\n')
 		if err == io.EOF {
 			if str != "" {
-				mutate(str, add, remove)
+				mutate(str)
 			}
 			break
 		}
@@ -140,25 +71,29 @@ func handler() {
 		}
 
 		// Strip newline off the end.
-		mutate(str[:len(str)-1], add, remove)
+		mutate(str[:len(str)-1])
 	}
 
 	if *actual {
 		mi.Flush(ctx, client)
+	} else {
+		log.Printf("Running in dry run mode, no changes made")
 	}
 }
 
-func mutate(line string, add, remove []string) {
-	b, _ := hex.DecodeString(line)
+func mutate(line string) {
+	var changed bool
+
+	b, err := hex.DecodeString(line)
+	if err != nil {
+		log.Fatalf("Unable to decode sha256: %s", line)
+	}
 	p1 := mediaInfo.Get(util.Sha256(b))
-	tags, changed := modifyTags(p1.Tags, add, remove)
+	p1.Tags, changed = tags.Modify(p1.Tags)
 	if changed {
 		p1.TimestampSecondsSinceEpoch = time.Now().Unix()
-		p1.Tags = tags
-		log.Printf("Success %q\n", p1)
-
 		mediaInfo.InsertFast(p1)
-	} else {
-		log.Printf("Nope %q\n", p1.File[0].Filename)
+
+		log.Printf("Modifying %q\n", p1.File[0].Filename)
 	}
 }

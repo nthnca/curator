@@ -16,6 +16,7 @@ import (
 var (
 	filter string
 	max    int
+	tags   util.Tags
 )
 
 func Register(app *kingpin.Application) {
@@ -27,6 +28,8 @@ func Register(app *kingpin.Application) {
 		})
 	cmd.Flag("filter", "description").StringVar(&filter)
 	cmd.Flag("max", "The maximum number of results to return").IntVar(&max)
+	cmd.Flag("has", "Has labels").Short('a').StringsVar(&tags.A)
+	cmd.Flag("not", "Not labels").Short('b').StringsVar(&tags.B)
 }
 
 func handler() {
@@ -41,20 +44,14 @@ func handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
-	deleted := func(lbls []string) bool {
-		for _, x := range lbls {
-			if x == "keep" {
-				return false
-			}
-		}
-		return true
-	}
+	tags.Normalize()
+	tags.Validate(config.ValidLabels())
 
 	size := len(mi.All())
 	c := 0
 	for i, _ := range mi.All() {
 		iter := mi.All()[size-i-1]
-		if deleted(iter.Tags) {
+		if tags.Match(iter.Tags) {
 			continue
 		}
 

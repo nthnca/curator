@@ -23,14 +23,8 @@ func Handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
-	deleted := func(lbls []string) bool {
-		for _, x := range lbls {
-			if x == "keep" {
-				return false
-			}
-		}
-		return true
-	}
+	var tags util.Tags
+	tags.A = []string{"keep"}
 
 	var totalsize int64
 	total := len(mi.All())
@@ -47,7 +41,7 @@ func Handler() {
 
 		totalsize += size
 		years[name[:4]] += size
-		if deleted(y.Tags) {
+		if !tags.Match(y.Tags) {
 			yeard[name[:4]]++
 			del++
 		} else {
