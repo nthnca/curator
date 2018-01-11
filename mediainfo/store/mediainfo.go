@@ -99,6 +99,13 @@ func (mi *MediaInfo) Insert(ctx context.Context, client *storage.Client, media *
 	mi.insertInternal(ctx, client, media, true)
 }
 
+// InsertFast adds a new Media object but doesn't save. If this objects Key is the same as an
+// existing object it will replace it if its timestamp is newer, if this new object is older it
+// will drop it. To save you need to call Flush.
+func (mi *MediaInfo) InsertFast(media *message.Media) {
+	mi.insertInternal(nil, nil, media, false)
+}
+
 // Flush does a full save and cleans up any singleton files.
 func (mi *MediaInfo) Flush(ctx context.Context, client *storage.Client) {
 	mi.saveAll(ctx, client)

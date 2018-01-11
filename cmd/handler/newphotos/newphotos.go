@@ -203,6 +203,7 @@ func convertToMedia(attr []*storage.ObjectAttrs) (*message.Media, error) {
 
 	media.Key = media.File[0].Sha256Sum
 	media.TimestampSecondsSinceEpoch = time.Now().Unix()
+	media.Tags = []string{"new"}
 
 	return &media, nil
 }

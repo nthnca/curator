@@ -47,6 +47,12 @@ func PhotoStorageBucket() string {
 	return instance.PhotoStorageBucket
 }
 
+func ValidLabels() []string {
+	parse()
+
+	return instance.ValidLabels
+}
+
 func MediaInfoBucket() string {
 	parse()
 

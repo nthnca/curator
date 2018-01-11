@@ -41,11 +41,20 @@ func handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
+	deleted := func(lbls []string) bool {
+		for _, x := range lbls {
+			if x == "keep" {
+				return false
+			}
+		}
+		return true
+	}
+
 	size := len(mi.All())
 	c := 0
 	for i, _ := range mi.All() {
 		iter := mi.All()[size-i-1]
-		if iter.Deleted {
+		if deleted(iter.Tags) {
 			continue
 		}
 

@@ -8,7 +8,7 @@ message Media {
   PhotoInfo photo = 3;
   repeated FileInfo file = 4;
   string name = 5;  // Normalized name
-  bool deleted = 6;
+  repeated string tags = 7;
 }
 
 /* Information about the original media capture, this information shouldn't change. */

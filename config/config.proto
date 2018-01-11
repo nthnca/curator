@@ -8,6 +8,7 @@ message CuratorConfig {
   string photo_info_bucket = 3;
 
   repeated CameraModels camera_models = 4;
+  repeated string valid_labels = 5;
 }
 
 message CameraModels {

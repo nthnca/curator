@@ -5,13 +5,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/nthnca/curator/cmd/handler/deletephotos"
 	"github.com/nthnca/curator/cmd/handler/getphotos"
+	"github.com/nthnca/curator/cmd/handler/mutatephotos"
 	"github.com/nthnca/curator/cmd/handler/newphotos"
 	"github.com/nthnca/curator/cmd/handler/statphotos"
 	"github.com/nthnca/curator/config"
 	"github.com/nthnca/gobuild"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+)
+
+var (
+	actual bool
 )
 
 func main() {
@@ -21,6 +25,7 @@ func main() {
 		"curator",
 		"Photo organizational system that run in Google AppEngine")
 	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
+	app.Flag("go", "Actually do things").BoolVar(&actual)
 
 	app.Command("new", "Process new photos").Action(
 		func(_ *kingpin.ParseContext) error {
@@ -28,11 +33,7 @@ func main() {
 			return nil
 		})
 	getphotos.Register(app)
-	app.Command("delete", "Delete photos").Action(
-		func(_ *kingpin.ParseContext) error {
-			deletephotos.Handler()
-			return nil
-		})
+	mutatephotos.Register(app, &actual)
 	app.Command("stats", "analyze curator data").Action(
 		func(_ *kingpin.ParseContext) error {
 			statphotos.Handler()
