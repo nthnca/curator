@@ -1,6 +1,7 @@
 package util
 
 import (
+	"sort"
 	"testing"
 )
 
@@ -58,6 +59,7 @@ func TestModify(t *testing.T) {
 		tags.A = x[0]
 		tags.B = x[1]
 		out, _ := tags.Modify(x[2])
+		sort.Strings(out)
 		exp := x[3]
 
 		if len(out) != len(exp) {
@@ -66,7 +68,7 @@ func TestModify(t *testing.T) {
 
 		for i := range out {
 			if out[i] != exp[i] {
-				t.Error("Fail: ", 1)
+				t.Error("Fail: ", out, exp)
 			}
 		}
 	}

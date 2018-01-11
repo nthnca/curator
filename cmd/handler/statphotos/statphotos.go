@@ -2,6 +2,7 @@ package statphotos
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sort"
 
@@ -32,40 +33,49 @@ func handler() {
 		log.Fatalf("New MediaInfo store failed: %v", err)
 	}
 
-	var tags util.Tags
-	tags.A = []string{"keep"}
+	arr := mi.All()
+	sort.Slice(arr, func(i, j int) bool {
+		return arr[i].Photo.EpochInSeconds < arr[j].Photo.EpochInSeconds
+	})
 
+	tagcount := make(map[string]int)
 	var totalsize int64
-	total := len(mi.All())
-	del := 0
-	yeart := make(map[string]int)
-	yeard := make(map[string]int)
-	years := make(map[string]int64)
-	for _, y := range mi.All() {
+
+	ycount := 0
+	ytagcount := make(map[string]int)
+	var ysize int64
+
+	for i, y := range arr {
 		name := util.GetCanonicalName(y)
+		sort.Strings(y.Tags)
+
 		var size int64
 		for _, f := range y.File {
 			size += f.SizeInBytes
 		}
 
+		k := fmt.Sprintf("%s", y.Tags)
+		tagcount[k] = tagcount[k] + 1
 		totalsize += size
-		years[name[:4]] += size
-		if !tags.Match(y.Tags) {
-			yeard[name[:4]]++
-			del++
-		} else {
-			yeart[name[:4]]++
+
+		ytagcount[k] = ytagcount[k] + 1
+		ycount++
+		ysize += size
+
+		if i+1 == len(arr) || name[:4] != util.GetCanonicalName(arr[i+1])[:4] {
+			fmt.Printf("%s (%d)\n", name[:4], ysize/100000000)
+			for k := range ytagcount {
+				fmt.Printf("  %s %d\n", k, ytagcount[k])
+			}
+
+			ycount = 0
+			ytagcount = make(map[string]int)
+			ysize = 0
 		}
 	}
-	var keys []string
-	for k := range yeart {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
 
-	for _, k := range keys {
-		log.Printf("Photos %v: %v (%v) %d", k, yeart[k], yeard[k], years[k]/100000000)
+	fmt.Printf("Totals (%d)\n", totalsize/100000000)
+	for k := range tagcount {
+		fmt.Printf("  %s %d\n", k, tagcount[k])
 	}
-	log.Printf("Photos %d (deleted: %d, total: %d) %d",
-		total-del, del, total, totalsize/100000000)
 }
