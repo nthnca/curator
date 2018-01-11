@@ -28,8 +28,8 @@ func Register(app *kingpin.Application) {
 		})
 	cmd.Flag("filter", "description").StringVar(&filter)
 	cmd.Flag("max", "The maximum number of results to return").IntVar(&max)
-	cmd.Flag("has", "Has labels").Short('a').StringsVar(&tags.A)
-	cmd.Flag("not", "Not labels").Short('b').StringsVar(&tags.B)
+	cmd.Flag("has", "Has labels").StringsVar(&tags.A)
+	cmd.Flag("not", "Not labels").StringsVar(&tags.B)
 }
 
 func handler() {
@@ -47,10 +47,9 @@ func handler() {
 	tags.Normalize()
 	tags.Validate(config.ValidLabels())
 
-	size := len(mi.All())
-	c := 0
-	for i, _ := range mi.All() {
-		iter := mi.All()[size-i-1]
+	count := 0
+	for i := len(mi.All()) - 1; i >= 0; i-- {
+		iter := mi.All()[i]
 		if !tags.Match(iter.Tags) {
 			continue
 		}
@@ -60,15 +59,13 @@ func handler() {
 			continue
 		}
 
-		c++
-		if max != 0 && c > max {
+		count++
+		fmt.Printf("%s %s\n", hex.EncodeToString(iter.Key), name)
+
+		if max != 0 && count >= max {
 			break
 		}
-
-		fmt.Printf("%s %s\n", hex.EncodeToString(iter.Key), name)
 	}
 
-	log.Printf("--filter=%+v", filter)
-	log.Printf("--max=%+v", max)
-	log.Printf("Photos retrieved: %d", c)
+	log.Printf("Photos retrieved: %d", count)
 }
