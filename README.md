@@ -6,26 +6,22 @@ Storing my photos
 
 TODO
 
-## Usage
+## Some examples
 
-### curator load
-
-### curator get
+### Get all photos from 2014
 
 ```shell
-alias pget='while read a b; do { curl -sf http://<cachelocation>/Pics/$a -o .pics/$a && ln .pics/$a "$b"; if [ $? -ne 0 ]; then echo $a; fi; }; if [ $(jobs | wc -l) -gt 5 ]; then wait; fi; done'
-ssh <server> "~/go/bin/curator get" | pget
+curator get --filter 2014 --not archive | pget
 ```
 
-### curator delete
+### Mark deleted photos as archived
 
 ```shell
-alias pdeleted='(cd .pics; ls -i) | egrep -v "(`stat -f '%i' * | paste -sd"|" -`) " | cut -f 2 -d " "'
-pdeleted | ssh <server> "~/go/bin/curator delete"
+pnot | curator mutate -a archive --go
 ```
 
-### curator stats
+### Get statistics about your photos
 
 ```shell
-ssh <server> "~/go/bin/curator stats"
+curator stats
 ```
