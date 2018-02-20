@@ -163,7 +163,10 @@ func (mi *MediaInfo) insertInternal(ctx context.Context, client *storage.Client,
 			log.Fatalf("save all %v", err)
 		}
 	} else {
-		mi.saveOne(ctx, client, media)
+		if err := mi.saveOne(ctx, client, media); err != nil {
+			log.Fatalf("Failed to write: %v", err)
+		}
+
 	}
 }
 

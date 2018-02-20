@@ -112,21 +112,12 @@ func suffix(a string) string {
 func processPhotoSet(attr []*storage.ObjectAttrs) {
 	media, err := convertToMedia(attr)
 	if err != nil {
-		log.Printf("convertToMedia: %v", err)
+		log.Fatalf("convertToMedia: %v", err)
 	}
-
-	/*
-		// Are these files already known?
-		for _, k := range media.File {
-			if true {
-				fmt.Printf("%v\n", k)
-			}
-		}
-	*/
 
 	// cp files
 	for _, a := range attr {
-		name := getFileNameForAttr(a, media)
+		name := lookupSha256(a, media)
 		_, err := client.Bucket(config.PhotoStorageBucket()).Object(name).Attrs(ctx)
 		if err == nil {
 			log.Printf("File already exists: %v", name)
@@ -162,7 +153,7 @@ func processPhotoSet(attr []*storage.ObjectAttrs) {
 	}
 }
 
-func getFileNameForAttr(attr *storage.ObjectAttrs, m *message.Media) string {
+func lookupSha256(attr *storage.ObjectAttrs, m *message.Media) string {
 	for _, mf := range m.File {
 		if util.MD5(mf.Md5Sum) == util.MD5(attr.MD5) {
 			return hex.EncodeToString(mf.Sha256Sum)
@@ -172,6 +163,9 @@ func getFileNameForAttr(attr *storage.ObjectAttrs, m *message.Media) string {
 	return ""
 }
 
+// attr is expected to contain exactly one JPG and zero or more other related files (RAWs for
+// example.) A message.Media object will contain the EXIF information from this JPG and basic file
+// information about the JPG and any other files included.
 func convertToMedia(attr []*storage.ObjectAttrs) (*message.Media, error) {
 	var jpg []*storage.ObjectAttrs
 	var other []*storage.ObjectAttrs
@@ -191,20 +185,20 @@ func convertToMedia(attr []*storage.ObjectAttrs) (*message.Media, error) {
 	var media message.Media
 	jpginfo, err := getFile(jpg[0], "tmpfile.jpg")
 	if err != nil {
-		log.Fatalf("getfile %v", err)
+		log.Fatalf("Failed to retrieve file: %v", err)
 	}
 	media.File = append(media.File, jpginfo)
 
 	mediainfo, err := exif.Parse("tmpfile.jpg")
 	if err != nil {
-		log.Fatalf("Oop %v", err)
+		log.Fatalf("Failed to get EXIF data from JPG: %v", err)
 	}
 	media.Photo = mediainfo
 
 	for _, a := range other {
 		info, err := getFile(a, "")
 		if err != nil {
-			log.Fatalf("Oop 2 %v", err)
+			log.Fatalf("Failed to retrieve file: %v", err)
 		}
 		media.File = append(media.File, info)
 	}
@@ -251,17 +245,3 @@ func getFile(attr *storage.ObjectAttrs, localPath string) (*message.FileInfo, er
 		SizeInBytes: attr.Size,
 	}, nil
 }
-
-/*
-	if err := os.Remove(name); err != nil {
-		log.Fatalf("Attempting to remove file: %v", err)
-	}
-func removePhotoFromQueue(attr *storage.ObjectAttrs) {
-	log.Printf("Deleting")
-	if !dryRun {
-		if err := client.Bucket(attr.Bucket).Object(attr.Name).Delete(ctx); err != nil {
-			log.Fatalf("Failed to delete: %v", err)
-		}
-	}
-}
-*/
