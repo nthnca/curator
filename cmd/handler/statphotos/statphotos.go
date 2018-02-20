@@ -21,6 +21,10 @@ func Register(app *kingpin.Application) {
 		})
 }
 
+func gb(bytes int64) string {
+	return fmt.Sprintf("%d.%d GB", bytes/1000000000, (bytes/100000000)%10)
+}
+
 func handler() {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
@@ -63,7 +67,7 @@ func handler() {
 		ysize += size
 
 		if i+1 == len(arr) || name[:4] != util.GetCanonicalName(arr[i+1])[:4] {
-			fmt.Printf("%s (%d)\n", name[:4], ysize/100000000)
+			fmt.Printf("%s (%s)\n", name[:4], gb(ysize))
 			for k := range ytagcount {
 				fmt.Printf("  %s %d\n", k, ytagcount[k])
 			}
@@ -74,7 +78,7 @@ func handler() {
 		}
 	}
 
-	fmt.Printf("Totals (%d)\n", totalsize/100000000)
+	fmt.Printf("Totals (%s)\n", gb(totalsize))
 	for k := range tagcount {
 		fmt.Printf("  %s %d\n", k, tagcount[k])
 	}
