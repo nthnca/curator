@@ -133,8 +133,7 @@ func processPhotoSet(attr []*storage.ObjectAttrs) {
 			continue
 		}
 		if err != nil && err != storage.ErrObjectNotExist {
-			log.Printf("File exists?, Error: %v", name)
-			continue
+			log.Fatalf("Error checking for file: %v, %v", name, err)
 		}
 		log.Printf("Copying: %v/%v -> %v/%v\n",
 			a.Bucket, a.Name, config.PhotoStorageBucket(), name)
