@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/nthnca/curator/cmd/handler/fsckphotos"
 	"github.com/nthnca/curator/cmd/handler/getphotos"
 	"github.com/nthnca/curator/cmd/handler/mutatephotos"
 	"github.com/nthnca/curator/cmd/handler/newphotos"
@@ -32,6 +33,7 @@ func main() {
 	getphotos.Register(app)
 	mutatephotos.Register(app, &actual)
 	statphotos.Register(app)
+	fsckphotos.Register(app)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
