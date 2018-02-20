@@ -29,7 +29,7 @@ func main() {
 	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
 	app.Flag("go", "Actually do things").BoolVar(&actual)
 
-	newphotos.Register(app)
+	newphotos.Register(app, &actual)
 	getphotos.Register(app)
 	mutatephotos.Register(app, &actual)
 	statphotos.Register(app)

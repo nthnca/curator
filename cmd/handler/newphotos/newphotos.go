@@ -22,19 +22,17 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-const (
-	dryRun = false
-)
-
 var (
 	ctx       context.Context
 	client    *storage.Client
+	dryRun    = false
 	mediaInfo *store.MediaInfo
 )
 
-func Register(app *kingpin.Application) {
+func Register(app *kingpin.Application, actual *bool) {
 	app.Command("new", "Process new photos").Action(
 		func(_ *kingpin.ParseContext) error {
+			dryRun = !*actual
 			handler()
 			return nil
 		})
@@ -82,6 +80,8 @@ func handler() {
 				set = set[:0]
 			}
 			set = append(set, obj)
+
+			// This should probably disappear
 			c++
 			if c > 500 {
 				log.Fatalf("Foo")
@@ -115,6 +115,11 @@ func processPhotoSet(attr []*storage.ObjectAttrs) {
 		log.Fatalf("convertToMedia: %v", err)
 	}
 
+	dryMsg := ""
+	if dryRun {
+		dryMsg = "DRY_RUN: "
+	}
+
 	// cp files
 	for _, a := range attr {
 		name := lookupSha256(a, media)
@@ -126,8 +131,8 @@ func processPhotoSet(attr []*storage.ObjectAttrs) {
 		if err != nil && err != storage.ErrObjectNotExist {
 			log.Fatalf("Error checking for file: %v, %v", name, err)
 		}
-		log.Printf("Copying: %v/%v -> %v/%v\n",
-			a.Bucket, a.Name, config.PhotoStorageBucket(), name)
+		log.Printf("%sCopying: %v/%v -> %v/%v\n",
+			dryMsg, a.Bucket, a.Name, config.PhotoStorageBucket(), name)
 		if !dryRun {
 			src := client.Bucket(a.Bucket).Object(a.Name)
 			dest := client.Bucket(config.PhotoStorageBucket()).Object(name)
@@ -140,11 +145,13 @@ func processPhotoSet(attr []*storage.ObjectAttrs) {
 
 	// save meta
 	// TODO: Can't tell if this fails... DANGER
-	mediaInfo.Insert(ctx, client, media)
+	if !dryRun {
+		mediaInfo.Insert(ctx, client, media)
+	}
 
 	// delete files
 	for _, a := range attr {
-		log.Printf("Deleting: %v/%v\n", a.Bucket, a.Name)
+		log.Printf("%sDeleting: %v/%v\n", dryMsg, a.Bucket, a.Name)
 		if !dryRun {
 			if err := client.Bucket(a.Bucket).Object(a.Name).Delete(ctx); err != nil {
 				log.Fatalf("Failed to delete: %v", err)
