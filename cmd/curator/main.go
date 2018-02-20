@@ -33,28 +33,5 @@ func main() {
 	mutatephotos.Register(app, &actual)
 	statphotos.Register(app)
 
-	/*
-		app.Command("oldsync", "Sync photos on disk to the cloud").Action(
-			func(_ *kingpin.ParseContext) error {
-				update.Handler()
-				return nil
-			})
-		app.Command("cache", "Update datastore caches").Action(
-			func(_ *kingpin.ParseContext) error {
-				cache.Handler()
-				return nil
-			})
-		app.Command("queue", "queue more work items").Action(
-			func(_ *kingpin.ParseContext) error {
-				queue.Handler()
-				return nil
-			})
-		app.Command("stats", "analyze curator data").Action(
-			func(_ *kingpin.ParseContext) error {
-				stats.Handler()
-				return nil
-			})
-	*/
-
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
