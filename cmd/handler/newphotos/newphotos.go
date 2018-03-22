@@ -54,42 +54,32 @@ func handler() {
 
 	c := 0
 	log.Printf("Looking for photos in: %s", config.PhotoQueueBucket())
-	for it := client.Buckets(ctx, config.PhotoQueueBucket()); ; {
-		bktiter, err := it.Next()
+	//log.Printf("Processing files in bucket: %s", bktiter.Name)
+	var set []*storage.ObjectAttrs
+	bkt := client.Bucket(config.PhotoQueueBucket())
+	for it := bkt.Objects(ctx, nil); ; {
+		obj, err := it.Next()
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
-			log.Fatalf("Failed to iterate through buckets: %v", err)
+			log.Fatalf("Failed to iterate through objects: %v", err)
 		}
 
-		log.Printf("Processing files in bucket: %s", bktiter.Name)
-		var set []*storage.ObjectAttrs
-		bkt := client.Bucket(bktiter.Name)
-		for it := bkt.Objects(ctx, nil); ; {
-			obj, err := it.Next()
-			if err == iterator.Done {
-				break
-			}
-			if err != nil {
-				log.Fatalf("Failed to iterate through objects: %v", err)
-			}
-
-			if len(set) > 0 && base(set[0].Name) != base(obj.Name) {
-				processPhotoSet(set)
-				set = set[:0]
-			}
-			set = append(set, obj)
-
-			// This should probably disappear
-			c++
-			if c > 500 {
-				log.Fatalf("Foo")
-			}
-		}
-		if len(set) > 0 {
+		if len(set) > 0 && base(set[0].Name) != base(obj.Name) {
 			processPhotoSet(set)
+			set = set[:0]
 		}
+		set = append(set, obj)
+
+		// This should probably disappear
+		c++
+		if c > 500 {
+			log.Fatalf("Foo")
+		}
+	}
+	if len(set) > 0 {
+		processPhotoSet(set)
 	}
 }
 
