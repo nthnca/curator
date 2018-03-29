@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/nthnca/curator/config"
-	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/mediainfo/message"
 )
 
 func GetCanonicalName(media *message.Media) string {

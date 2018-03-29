@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/mediainfo/message"
 	"github.com/nthnca/curator/util"
 	"google.golang.org/api/iterator"
 )

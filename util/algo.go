@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/nthnca/curator/data/message"
+	"github.com/nthnca/curator/mediainfo/message"
 )
 
 type Game struct {
