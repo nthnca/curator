@@ -6,27 +6,33 @@ Storing my photos
 
 TODO
 
-## Some examples
+## curator Commands:
 
-### Get all photos from 2014
+### new : Process all new files waiting in the queue
+
+This scans through all the photos you have added to your queue, does some basic processing
+of these files and adds them to your repository along with the basic exif information.
+
+### get : Get requested pictures
+
+This retrieves the pictures that match the given query
 
 ```shell
 curator get --filter 2014 --not archive | pget
 ```
 
-### Mark deleted photos as archived
+### mutate : Modifies the set of tags for a given set of pictures
 
 ```shell
 pnot | curator mutate -a archive --go
 ```
 
-### Get statistics about your photos
+### stats : Some basic statistics about your repository
 
-```shell
-curator stats
-```
+Will output information like the number and size of your photos for each year, as well as a
+breakdown of how many photos per tag, etc.
 
-### fsck : Validate curator reposity
+### fsck : Validate curator repository
 
 This command will load your photo information and validate that all the files that are referenced
 are available in the repository. It also validates that all the files that exist are referenced.
