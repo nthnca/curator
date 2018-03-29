@@ -10,8 +10,6 @@ import (
 	"github.com/nthnca/curator/cmd/handler/mutatephotos"
 	"github.com/nthnca/curator/cmd/handler/newphotos"
 	"github.com/nthnca/curator/cmd/handler/statphotos"
-	"github.com/nthnca/curator/config"
-	"github.com/nthnca/gobuild"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -26,7 +24,6 @@ func main() {
 		"curator",
 		"Photo organizational system that run in Google AppEngine")
 	app.UsageWriter(os.Stdout)
-	gobuild.RegisterCommands(app, config.Path, config.ProjectID)
 	app.Flag("go", "Actually do things").BoolVar(&actual)
 
 	newphotos.Register(app, &actual)
