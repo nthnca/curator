@@ -22,9 +22,9 @@ func main() {
 
 	app := kingpin.New(
 		"curator",
-		"Photo organizational system that run in Google AppEngine")
+		"Photo storage and organization tool")
 	app.UsageWriter(os.Stdout)
-	app.Flag("go", "Actually do things").BoolVar(&actual)
+	app.Flag("go", "Actually make modifications").BoolVar(&actual)
 
 	newphotos.Register(app, &actual)
 	getphotos.Register(app)
