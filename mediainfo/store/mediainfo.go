@@ -106,6 +106,19 @@ func (mi *MediaInfo) InsertFast(media *message.Media) {
 	mi.insertInternal(nil, nil, media, false)
 }
 
+// DeleteFast deletes a referenced Media object but doesn't save. To save you need to call Flush.
+func (mi *MediaInfo) DeleteFast(key [32]byte) {
+	i, ok := mi.index[key]
+	if !ok {
+		return
+	}
+
+	delete(mi.index, key)
+	mi.data.Media[i] = mi.data.Media[len(mi.data.Media)-1]
+	mi.index[util.Sha256(mi.data.Media[i].Key)] = i
+	mi.data.Media = mi.data.Media[:len(mi.data.Media)-1]
+}
+
 // Flush does a full save and cleans up any singleton files.
 func (mi *MediaInfo) Flush(ctx context.Context, client *storage.Client) {
 	mi.saveAll(ctx, client)
