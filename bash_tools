@@ -1,0 +1,49 @@
+CURATOR_HOST=
+
+function curator() {
+  ssh $CURATOR_HOST "~/go/bin/curator $@"
+}
+
+function GET_PHOTO() {
+  echo $2
+  if [ ! -f .pics/$1 ]; then
+    #curl -sf http://192.168.1.1/Pics/$1 -o .pics/$1 || exit 1
+    cp ~/Pictures/Cache/$1 .pics/$1 || exit 1
+  fi
+
+  if [ ! -f $2 ]; then
+    ln .pics/$1 "$2" || exit 1
+  fi
+}
+
+function _pget() {
+  while read a b; do
+    GET_PHOTO $a $b &
+    if [ $(jobs | wc -l) -gt 5 ]; then
+      wait
+    fi
+  done
+}
+
+function pget() {
+  if [ $# -eq 1 ]; then
+    echo Opening $1
+    cat $1 | _pget
+  else
+    mkdir -p .pics
+
+    tee .pics/.dir | _pget
+  fi
+}
+
+function phas() {
+  fgrep `ls | sed 's/^/-e/' | paste -sd" " -` <.pics/.dir | cut -d " " -f 1
+}
+
+function pnot() {
+  fgrep -v `ls | sed 's/^/-e/' | paste -sd" " -` <.pics/.dir | cut -d " " -f 1
+}
+
+function pall() {
+  cat .pics/.dir | cut -d " " -f 1
+}
