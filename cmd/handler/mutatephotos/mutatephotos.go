@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/nthnca/curator/config"
-	"github.com/nthnca/curator/mediainfo/store"
-	"github.com/nthnca/curator/util"
+	"github.com/nthnca/curator/pkg/config"
+	"github.com/nthnca/curator/pkg/mediainfo/store"
+	"github.com/nthnca/curator/pkg/util"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 

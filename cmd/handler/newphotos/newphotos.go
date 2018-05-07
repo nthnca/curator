@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/nthnca/curator/config"
-	"github.com/nthnca/curator/mediainfo/exif"
-	"github.com/nthnca/curator/mediainfo/message"
-	"github.com/nthnca/curator/mediainfo/store"
-	"github.com/nthnca/curator/util"
+	"github.com/nthnca/curator/pkg/config"
+	"github.com/nthnca/curator/pkg/mediainfo/exif"
+	"github.com/nthnca/curator/pkg/mediainfo/message"
+	"github.com/nthnca/curator/pkg/mediainfo/store"
+	"github.com/nthnca/curator/pkg/util"
 	"google.golang.org/api/iterator"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )

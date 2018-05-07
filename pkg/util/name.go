@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nthnca/curator/config"
-	"github.com/nthnca/curator/mediainfo/message"
+	"github.com/nthnca/curator/pkg/config"
+	"github.com/nthnca/curator/pkg/mediainfo/message"
 )
 
 func GetCanonicalName(media *message.Media) string {

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/nthnca/curator/mediainfo/message"
-	"github.com/nthnca/curator/util"
+	"github.com/nthnca/curator/pkg/mediainfo/message"
+	"github.com/nthnca/curator/pkg/util"
 	"google.golang.org/api/iterator"
 )
 

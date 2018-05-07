@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nthnca/curator/mediainfo/message"
+	"github.com/nthnca/curator/pkg/mediainfo/message"
 )
 
 var (
