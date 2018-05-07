@@ -1,0 +1,19 @@
+#!/bin/dash
+
+set -x
+
+go tool vet -all -shadow=true .
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+go test -short ./... > /tmp/testout
+if [ $? -ne 0 ]; then
+  grep -Ev "^(ok|\?) " < /tmp/testout
+  exit 1
+fi
+
+go install ./...
+if [ $? -ne 0 ]; then
+  exit 1
+fi
