@@ -3,10 +3,8 @@ package config
 //go:generate protoc --go_out=. config.proto
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
@@ -61,14 +59,9 @@ func MediaInfoBucket() string {
 
 func parse() {
 	once.Do(func() {
-		path := filepath.Join(os.Getenv("HOME"), ".curator.pb.ascii")
-		log.Printf("Loading config from: %s", path)
-		config, err := ioutil.ReadFile(filepath.Join(path))
-		if err != nil {
-			log.Fatalf("Failed to read config: %v", err)
-		}
+		config := os.Getenv("CONFIG_PROTO_ASCII")
 
-		err = proto.UnmarshalText(string(config), &instance)
+		err := proto.UnmarshalText(config, &instance)
 		if err != nil {
 			log.Fatalf("Failed to parse config: %v", err)
 		}
