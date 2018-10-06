@@ -12,10 +12,12 @@ message Media {
   // This is the "key" that you can use to refer to this image.
   bytes key = 1;
   
+  // This is the timestamp of when this Media object was last modified. When you modify a media object, don't modify
+  // the current one, but just add a new one with a new timestamp.
+  int64 timestamp_seconds_since_epoch = 2;
+
   // Metadata for the image.
   PhotoInfo photo = 3;
-  // TODO: do we need this? It also exists in the PhotoInfo
-  int64 timestamp_seconds_since_epoch = 2;
   
   // The list of files that represent this image.
   repeated FileInfo file = 4;
@@ -30,7 +32,7 @@ message Media {
 // Information about the original media capture, this information shouldn't change.
 message PhotoInfo {
   int64 epoch_in_seconds = 1;
-  // int64 datetime_seconds_since_epoch = 1;
+  // int64 timestamp_seconds_since_epoch = 1;
   string datetime = 10;
   string make = 2;
   string model = 3;
@@ -38,8 +40,8 @@ message PhotoInfo {
   Fraction exposure_time = 5;
   Fraction focal_length = 6;
   int32 iso = 7;
-  int32 width = 8; // May not be the same for all versions
-  int32 height = 9; // May not be the same for all versions
+  int32 width = 8; // May not be the same for all files in this Media
+  int32 height = 9; // May not be the same for all files in this Media
 }
 
 enum FileType {
