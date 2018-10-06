@@ -2,16 +2,32 @@ syntax = "proto3";
 
 package message;
 
+message MediaSet {
+  repeated Media media = 1;
+}
+
+// This represents a single image. It may contain a set of different files for example (.jpg, .raw, .mp4, etc)
+// that have different resolutions or image quality for the same image.
 message Media {
+  // This is the "key" that you can use to refer to this image.
   bytes key = 1;
-  int64 timestamp_seconds_since_epoch = 2;
+  
+  // Metadata for the image.
   PhotoInfo photo = 3;
+  // TODO: do we need this? It also exists in the PhotoInfo
+  int64 timestamp_seconds_since_epoch = 2;
+  
+  // The list of files that represent this image.
   repeated FileInfo file = 4;
-  string name = 5;  // Normalized name
+
+  // Normalized name - This is constructed from the image metadata.
+  string name = 5;
+  
+  // Allows us to tag images so we can easily sort and organize.
   repeated string tags = 7;
 }
 
-/* Information about the original media capture, this information shouldn't change. */
+// Information about the original media capture, this information shouldn't change.
 message PhotoInfo {
   int64 epoch_in_seconds = 1;
   // int64 datetime_seconds_since_epoch = 1;
@@ -39,8 +55,14 @@ message FileInfo {
   int64 size_in_bytes = 5;
 }
 
-message MediaSet {
-  repeated Media media = 1;
+message Fraction {
+  int32 numerator = 1;
+  int32 denominator = 2;
+}
+
+// TODO: Remove everything below here, I don't think it is needed any longer.
+message PhotoSet {
+  repeated Photo photo = 1;
 }
 
 message Photo {
@@ -64,15 +86,6 @@ message Photo {
   }
 
   PhotoProperties properties = 4;
-}
-
-message Fraction {
-  int32 numerator = 1;
-  int32 denominator = 2;
-}
-
-message PhotoSet {
-  repeated Photo photo = 1;
 }
 
 message ComparisonEntry {
