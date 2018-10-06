@@ -156,7 +156,7 @@ func (mi *MediaInfo) insertInternal(ctx context.Context, client *storage.Client,
 	i, ok := mi.index[key]
 	if ok {
 		// debugMedia("Found", mi.data.Media[i])
-		if mi.data.Media[i].TimestampSecondsSinceEpoch >= media.TimestampSecondsSinceEpoch {
+		if mi.data.Media[i].TimestampSeconds >= media.TimestampSeconds {
 			return
 		}
 		mi.data.Media[i] = media

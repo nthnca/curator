@@ -34,16 +34,16 @@ func Parse(path string) (*message.PhotoInfo, error) {
 
 	output := string(buffer[:])
 	pi := &message.PhotoInfo{
-		EpochInSeconds: getTime(output, reDateTime),
-		Datetime:       getString(output, reDateTime),
-		Make:           getString(output, reMake),
-		Model:          getString(output, reModel),
-		Aperture:       getFraction(output, reAperture),
-		ExposureTime:   getFraction(output, reExposureTime),
-		FocalLength:    getFraction(output, reFocalLength),
-		Iso:            int32(getInt(output, reISOSpeedRating)),
-		Width:          int32(getInt(output, reWidth)),
-		Height:         int32(getInt(output, reHeight)),
+		TimestampSeconds: getTime(output, reDateTime),
+		Datetime:         getString(output, reDateTime),
+		Make:             getString(output, reMake),
+		Model:            getString(output, reModel),
+		Aperture:         getFraction(output, reAperture),
+		ExposureTime:     getFraction(output, reExposureTime),
+		FocalLength:      getFraction(output, reFocalLength),
+		Iso:              int32(getInt(output, reISOSpeedRating)),
+		Width:            int32(getInt(output, reWidth)),
+		Height:           int32(getInt(output, reHeight)),
 	}
 
 	return pi, nil

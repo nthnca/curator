@@ -39,7 +39,7 @@ func handler() {
 
 	arr := mi.All()
 	sort.Slice(arr, func(i, j int) bool {
-		return arr[i].Photo.EpochInSeconds < arr[j].Photo.EpochInSeconds
+		return arr[i].Photo.TimestampSeconds < arr[j].Photo.TimestampSeconds
 	})
 
 	tagcount := make(map[string]int)

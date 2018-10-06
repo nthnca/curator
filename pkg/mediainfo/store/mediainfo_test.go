@@ -58,7 +58,7 @@ func baseCapabilities(ctx context.Context, client *storage.Client, bucketName st
 			var photo message.Media
 			shasum := sha256.Sum256([]byte(fmt.Sprintf("%v", i)))
 			photo.Key = shasum[:]
-			photo.TimestampSecondsSinceEpoch = time
+			photo.TimestampSeconds = time
 			mi.Insert(ctx, client, &photo)
 		}
 	}
@@ -68,8 +68,8 @@ func baseCapabilities(ctx context.Context, client *storage.Client, bucketName st
 		index := make(map[[32]byte]int)
 		for _, e := range mi.All() {
 			index[util.Sha256(e.Key)] = 1
-			if e.TimestampSecondsSinceEpoch != time {
-				log.Fatalf("Wrong entry value: %d", e.TimestampSecondsSinceEpoch)
+			if e.TimestampSeconds != time {
+				log.Fatalf("Wrong entry value: %d", e.TimestampSeconds)
 
 			}
 		}

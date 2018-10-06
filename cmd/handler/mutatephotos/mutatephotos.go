@@ -91,7 +91,7 @@ func mutate(line string) {
 	p1 := mediaInfo.Get(util.Sha256(b))
 	p1.Tags, changed = tags.Modify(p1.Tags)
 	if changed {
-		p1.TimestampSecondsSinceEpoch = time.Now().Unix()
+		p1.TimestampSeconds = time.Now().Unix()
 		mediaInfo.InsertFast(p1)
 
 		log.Printf("Modifying %q\n", p1.File[0].Filename)
