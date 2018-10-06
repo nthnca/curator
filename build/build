@@ -1,5 +1,11 @@
 #!/bin/dash
 
+echo "go generate ./..."
+go generate ./...
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
 echo "go tool vet -all -shadow=true . &"
 go tool vet -all -shadow=true . &
 C1=$!
@@ -7,10 +13,6 @@ C1=$!
 echo "go test -short ./... > /tmp/testout &"
 go test -short ./... > /tmp/testout &
 C2=$!
-
-echo "go install ./... &"
-go install ./... &
-C3=$!
 
 wait $C1
 if [ $? -ne 0 ]; then
@@ -23,7 +25,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-wait $C3
+echo "go install ./..."
+go install ./...
 if [ $? -ne 0 ]; then
   exit 1
 fi
