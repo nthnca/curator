@@ -84,13 +84,15 @@ func (m *MediaSet) GetMedia() []*Media {
 	return nil
 }
 
-// This represents a single image. It may contain a set of different files for example (.jpg, .raw, .mp4, etc)
-// that have different resolutions or image quality for the same image.
+// This represents a single image. It may contain a set of different files for
+// example (.jpg, .raw, .mp4, etc) that have different resolutions or image
+// quality for the same image.
 type Media struct {
 	// This is the "key" that you can use to refer to this image.
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	// This is the timestamp of when this Media object was last modified. When you modify a media object, don't modify
-	// the current one, but just add a new one with a new timestamp.
+	// This is the timestamp of when this Media object was last modified. When
+	// you modify a media object, don't modify the current one, but just add a
+	// new one with a new timestamp.
 	TimestampSeconds int64 `protobuf:"varint,2,opt,name=timestamp_seconds,json=timestampSeconds,proto3" json:"timestamp_seconds,omitempty"`
 	// Metadata for the image.
 	Photo *PhotoInfo `protobuf:"bytes,3,opt,name=photo,proto3" json:"photo,omitempty"`
@@ -172,9 +174,9 @@ func (m *Media) GetTags() []string {
 	return nil
 }
 
-// Information about the original media capture, this information shouldn't change.
+// Information about the original media capture, this information shouldn't
+// change.
 type PhotoInfo struct {
-	// int64 epoch_in_seconds = 1;
 	TimestampSeconds     int64     `protobuf:"varint,1,opt,name=timestamp_seconds,json=timestampSeconds,proto3" json:"timestamp_seconds,omitempty"`
 	Datetime             string    `protobuf:"bytes,10,opt,name=datetime,proto3" json:"datetime,omitempty"`
 	Make                 string    `protobuf:"bytes,2,opt,name=make,proto3" json:"make,omitempty"`
