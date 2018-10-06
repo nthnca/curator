@@ -102,7 +102,8 @@ func suffix(a string) string {
 func processPhotoSet(attr []*storage.ObjectAttrs) {
 	media, err := convertToMedia(attr)
 	if err != nil {
-		log.Fatalf("convertToMedia: %v", err)
+		log.Printf("Skipping invalid photo set: %v", err)
+		return
 	}
 
 	dryMsg := ""
@@ -176,7 +177,8 @@ func convertToMedia(attr []*storage.ObjectAttrs) (*message.Media, error) {
 	}
 
 	if len(jpg) != 1 {
-		return nil, fmt.Errorf("Invalid set of JPGs found: %v", jpg)
+		return nil, fmt.Errorf("Invalid set of JPGs found %s: %v",
+			attr[0].Name, jpg)
 	}
 
 	var media message.Media

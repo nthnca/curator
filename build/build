@@ -1,19 +1,29 @@
 #!/bin/dash
 
-set -x
+echo "go tool vet -all -shadow=true . &"
+go tool vet -all -shadow=true . &
+C1=$!
 
-go tool vet -all -shadow=true .
+echo "go test -short ./... > /tmp/testout &"
+go test -short ./... > /tmp/testout &
+C2=$!
+
+echo "go install ./... &"
+go install ./... &
+C3=$!
+
+wait $C1
 if [ $? -ne 0 ]; then
   exit 1
 fi
 
-go test -short ./... > /tmp/testout
+wait $C2
 if [ $? -ne 0 ]; then
   grep -Ev "^(ok|\?) " < /tmp/testout
   exit 1
 fi
 
-go install ./...
+wait $C3
 if [ $? -ne 0 ]; then
   exit 1
 fi
