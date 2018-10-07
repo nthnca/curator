@@ -1,10 +1,22 @@
-# curator
+# Curator
 
-Storing my photos
+Store and organize my photos. 
 
-## Installation
+## Basic Workflow
 
-TODO
+1. Add new photos into a Google cloud storage bucket.
+2. Run the curator "new" command. (This will process each of your photos, create some metadata for each of them and move your photo from the above storage location into the main storage area.)
+3. Use various curator commands to tag, view, and generally organize your photos.
+
+## Setup
+
+1. Create 3 Google cloud storage buckets. These three buckets are for:
+  - Staging area where new photos can be copied to.
+  - Photo repository. This bucket can be locked down so only your curator process has access to write to it.
+  - Photo metadata.  This bucket can be locked down so only your curator process has access to write to it.
+2. Create a config file. (It will list the 3 buckets you set up, the tags you want to use, and some mappings of camera names to abbreviations.
+3. Build the curator binary.
+4. Your ready to go ... follow the workflow listed above ... use the curator commands detailed below.
 
 ## curator Commands:
 
