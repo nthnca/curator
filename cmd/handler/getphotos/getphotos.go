@@ -7,9 +7,11 @@ import (
 	"log"
 
 	"cloud.google.com/go/storage"
+	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/pkg/config"
-	"github.com/nthnca/curator/pkg/mediainfo/store"
+	"github.com/nthnca/curator/pkg/mediainfo/message"
 	"github.com/nthnca/curator/pkg/util"
+	objectstore "github.com/nthnca/object-store"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -39,33 +41,38 @@ func handler() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	mi, err := store.New(ctx, client, config.MediaInfoBucket())
+	os, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
 	if err != nil {
-		log.Fatalf("New MediaInfo store failed: %v", err)
+		log.Fatalf("New ObjectStore failed: %v", err)
 	}
 
 	tags.Normalize()
 	tags.Validate(config.ValidLabels())
 
 	count := 0
-	for i := len(mi.All()) - 1; i >= 0; i-- {
-		iter := mi.All()[i]
-		if !tags.Match(iter.Tags) {
-			continue
+	os.ForEach(func(key string, value []byte) {
+		if max != 0 && count >= max {
+			return
 		}
 
-		name := util.GetCanonicalName(iter)
+		var m message.Media
+		if er := proto.Unmarshal(value, &m); er != nil {
+			log.Fatalf("Unmarshalling proto: %v", er)
+		}
+
+		iter := m
+		if !tags.Match(iter.Tags) {
+			return
+		}
+
+		name := util.GetCanonicalName(&iter)
 		if filter != "" && filter != name[:len(filter)] {
-			continue
+			return
 		}
 
 		count++
 		fmt.Printf("%s %s\n", hex.EncodeToString(iter.Key), name)
-
-		if max != 0 && count >= max {
-			break
-		}
-	}
+	})
 
 	log.Printf("Photos retrieved: %d", count)
 }
