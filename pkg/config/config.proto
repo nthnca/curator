@@ -6,6 +6,8 @@ message CuratorConfig {
   string photo_queue_bucket = 1;
   string photo_storage_bucket = 2;
   string photo_info_bucket = 3;
+  string photo_metadata_bucket = 6;
+  string photo_metadata_path = 7;
 
   repeated CameraModels camera_models = 4;
   repeated string valid_labels = 5;

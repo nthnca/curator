@@ -3,8 +3,10 @@ package config
 //go:generate protoc --go_out=. config.proto
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
@@ -57,11 +59,29 @@ func MediaInfoBucket() string {
 	return instance.PhotoInfoBucket
 }
 
+func MetadataBucket() string {
+	parse()
+
+	return instance.PhotoMetadataBucket
+}
+
+func MetadataPath() string {
+	parse()
+
+	return instance.PhotoMetadataPath
+}
+
 func parse() {
 	once.Do(func() {
-		config := os.Getenv("CONFIG_PROTO_ASCII")
+		config_file := os.Getenv("CONFIG_FILE")
 
-		err := proto.UnmarshalText(config, &instance)
+		log.Printf("Loading config from: %s", config_file)
+		config, err := ioutil.ReadFile(filepath.Join(config_file))
+		if err != nil {
+			log.Fatalf("Failed to read config: %v", err)
+		}
+
+		err = proto.UnmarshalText(string(config), &instance)
 		if err != nil {
 			log.Fatalf("Failed to parse config: %v", err)
 		}
