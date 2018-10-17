@@ -7,9 +7,11 @@ import (
 	"log"
 
 	"cloud.google.com/go/storage"
+	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/pkg/config"
-	"github.com/nthnca/curator/pkg/mediainfo/store"
+	"github.com/nthnca/curator/pkg/mediainfo/message"
 	"github.com/nthnca/curator/pkg/util"
+	objectstore "github.com/nthnca/object-store"
 	"google.golang.org/api/iterator"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -30,9 +32,9 @@ func handler() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	mi, err := store.New(ctx, client, config.MediaInfoBucket())
+	os, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
 	if err != nil {
-		log.Fatalf("New MediaInfo store failed: %v", err)
+		log.Fatalf("New ObjectStore failed: %v", err)
 	}
 
 	totalObjects := 0
@@ -41,13 +43,17 @@ func handler() {
 	wanted := make(map[string]bool)
 	have := make(map[string]bool)
 
-	for _, m := range mi.All() {
+	os.ForEach(func(key string, value []byte) {
+		var m message.Media
+		if er := proto.Unmarshal(value, &m); er != nil {
+			log.Fatalf("Unmarshalling proto: %v", er)
+		}
 		for _, f := range m.File {
 			name := hex.EncodeToString(f.Sha256Sum)
 			wanted[name] = true
 			totalObjects += 1
 		}
-	}
+	})
 
 	bkt := client.Bucket(config.PhotoStorageBucket())
 	for it := bkt.Objects(ctx, nil); ; {
@@ -76,7 +82,12 @@ func handler() {
 	}
 
 	del := [][]byte{}
-	for _, m := range mi.All() {
+	os.ForEach(func(key string, value []byte) {
+		var m message.Media
+		if er := proto.Unmarshal(value, &m); er != nil {
+			log.Fatalf("Unmarshalling proto: %v", er)
+		}
+
 		flag := false
 		for _, f := range m.File {
 			name := hex.EncodeToString(f.Sha256Sum)
@@ -86,13 +97,13 @@ func handler() {
 		}
 
 		if !flag {
-			continue
+			return
 		}
 
 		if missingObjects == 0 {
 			fmt.Printf("Missing objects:\n")
 		}
-		fmt.Printf("  %s\n", util.GetCanonicalName(m))
+		fmt.Printf("  %s\n", util.GetCanonicalName(&m))
 		del = append(del, m.Key)
 		for _, f := range m.File {
 			name := hex.EncodeToString(f.Sha256Sum)
@@ -101,7 +112,7 @@ func handler() {
 				missingObjects += 1
 			}
 		}
-	}
+	})
 
 	/*
 		        // Uncomment this if you want to delete Info relating to missing objects.
