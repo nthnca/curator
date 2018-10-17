@@ -7,9 +7,11 @@ import (
 	"sort"
 
 	"cloud.google.com/go/storage"
+	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/pkg/config"
-	"github.com/nthnca/curator/pkg/mediainfo/store"
+	"github.com/nthnca/curator/pkg/mediainfo/message"
 	"github.com/nthnca/curator/pkg/util"
+	objectstore "github.com/nthnca/object-store"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -32,12 +34,20 @@ func handler() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	mi, err := store.New(ctx, client, config.MediaInfoBucket())
+	os, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
 	if err != nil {
-		log.Fatalf("New MediaInfo store failed: %v", err)
+		log.Fatalf("New ObjectStore failed: %v", err)
 	}
 
-	arr := mi.All()
+	var arr []*message.Media
+	os.ForEach(func(key string, value []byte) {
+		var m message.Media
+		if er := proto.Unmarshal(value, &m); er != nil {
+			log.Fatalf("Unmarshalling proto: %v", er)
+		}
+		arr = append(arr, &m)
+	})
+
 	sort.Slice(arr, func(i, j int) bool {
 		return arr[i].Photo.TimestampSeconds < arr[j].Photo.TimestampSeconds
 	})
