@@ -24,6 +24,7 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+// Options is the set of valid options for the NewPhotos action.
 type Options struct {
 	DryRun bool
 }
@@ -36,6 +37,7 @@ type action struct {
 	dryRun     bool
 }
 
+// Do performs the new photos action, we should improve this documentation.
 func Do(opts *Options) error {
 	var act action
 	act.numThreads = 1
