@@ -1,6 +1,10 @@
 # Curator
 
-Store and organize my photos. 
+Store and organize my photos.
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/nthnca/curator?style=flat-square)](https://goreportcard.com/report/github.com/nthnca/curator)
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/nthnca/curator)
+
 
 ## Basic Workflow
 
