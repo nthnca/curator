@@ -74,7 +74,7 @@ func (tags *Tags) Modify(labelList []string) ([]string, bool) {
 		delete(tagMap, t)
 	}
 	var rv []string
-	for t, _ := range tagMap {
+	for t := range tagMap {
 		rv = append(rv, t)
 	}
 	return rv, changed
