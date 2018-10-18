@@ -5,11 +5,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/nthnca/curator/cmd/handler/fsckphotos"
-	"github.com/nthnca/curator/cmd/handler/getphotos"
-	"github.com/nthnca/curator/cmd/handler/mutatephotos"
-	"github.com/nthnca/curator/cmd/handler/newphotos"
-	"github.com/nthnca/curator/cmd/handler/statphotos"
+	"github.com/nthnca/curator/pkg/action/fsckphotos"
+	"github.com/nthnca/curator/pkg/action/getphotos"
+	"github.com/nthnca/curator/pkg/action/mutatephotos"
+	"github.com/nthnca/curator/pkg/action/newphotos"
+	"github.com/nthnca/curator/pkg/action/statphotos"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
