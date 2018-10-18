@@ -2,10 +2,6 @@ syntax = "proto3";
 
 package message;
 
-message MediaSet {
-  repeated Media media = 1;
-}
-
 // This represents a single image. It may contain a set of different files for
 // example (.jpg, .raw, .mp4, etc) that have different resolutions or image
 // quality for the same image.
@@ -61,49 +57,4 @@ message FileInfo {
 message Fraction {
   int32 numerator = 1;
   int32 denominator = 2;
-}
-
-// TODO: Remove everything below here, I don't think it is needed any longer.
-message PhotoSet {
-  repeated Photo photo = 1;
-}
-
-message Photo {
-  string key = 1;
-  string path = 2;
-  int64 num_bytes = 3;
-  bool user_hide = 5;
-  bytes md5sum = 6;
-  bytes sha256sum = 7;
-
-  message PhotoProperties {
-    int64 epoch_in_seconds = 1;
-    int32 width = 2;
-    int32 height = 3;
-    string make = 4;
-    string model = 5;
-    Fraction aperture = 6;
-    Fraction exposure_time = 7;
-    Fraction focal_length = 8;
-    int32 iso = 9;
-  }
-
-  PhotoProperties properties = 4;
-}
-
-message ComparisonEntry {
-  string photo1 = 1;
-  string photo2 = 2;
-
-  // Should only be 1 or 2.
-  int32 score = 3;
-}
-
-message Comparison {
-  int64 epoch = 1;
-  repeated ComparisonEntry entry = 2;
-}
-
-message ComparisonSet {
-  repeated Comparison comparison = 1;
 }
