@@ -74,8 +74,7 @@ func main() {
 		func(_ *kingpin.ParseContext) error {
 			opts := newphotos.Options{}
 			opts.DryRun = !actual
-			newphotos.Do(&opts)
-			return nil
+			return newphotos.Do(&opts)
 		})
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
