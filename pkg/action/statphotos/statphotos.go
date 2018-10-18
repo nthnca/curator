@@ -12,22 +12,13 @@ import (
 	"github.com/nthnca/curator/pkg/mediainfo/message"
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
-
-func Register(app *kingpin.Application) {
-	app.Command("stats", "analyze curator data").Action(
-		func(_ *kingpin.ParseContext) error {
-			handler()
-			return nil
-		})
-}
 
 func gb(bytes int64) string {
 	return fmt.Sprintf("%d.%d GB", bytes/1000000000, (bytes/100000000)%10)
 }
 
-func handler() {
+func Do() {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {

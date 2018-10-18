@@ -13,19 +13,9 @@ import (
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
 	"google.golang.org/api/iterator"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-func Register(app *kingpin.Application) {
-	cmd := app.Command("fsck", "Validate photos are intact")
-	cmd.Action(
-		func(_ *kingpin.ParseContext) error {
-			handler()
-			return nil
-		})
-}
-
-func handler() {
+func Do() {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {

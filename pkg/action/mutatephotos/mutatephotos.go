@@ -15,27 +15,14 @@ import (
 	"github.com/nthnca/curator/pkg/mediainfo/message"
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-var (
-	tags   util.Tags
-	actual *bool
-)
-
-func Register(app *kingpin.Application, actualx *bool) {
-	actual = actualx
-	cmd := app.Command("mutate", "Mutate")
-	cmd.Action(
-		func(_ *kingpin.ParseContext) error {
-			handler()
-			return nil
-		})
-	cmd.Flag("add", "Labels to add").Short('a').StringsVar(&tags.A)
-	cmd.Flag("remove", "Labels to remove").Short('r').StringsVar(&tags.B)
+type Options struct {
+	Tags   util.Tags
+	DryRun bool
 }
 
-func handler() {
+func Do(opts *Options) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -47,11 +34,11 @@ func handler() {
 		log.Fatalf("New ObjectStore failed: %v", err)
 	}
 
-	tags.Normalize()
-	tags.Validate(config.ValidLabels())
+	opts.Tags.Normalize()
+	opts.Tags.Validate(config.ValidLabels())
 
-	log.Printf("--add %s", tags.A)
-	log.Printf("--remove %s", tags.B)
+	log.Printf("--add %s", opts.Tags.A)
+	log.Printf("--remove %s", opts.Tags.B)
 
 	objs := make(map[string][]byte)
 	reader := bufio.NewReader(os.Stdin)
@@ -59,7 +46,7 @@ func handler() {
 		str, err := reader.ReadString('\n')
 		if err == io.EOF {
 			if str != "" {
-				mutate(mi, objs, str)
+				mutate(mi, objs, str, &opts.Tags)
 			}
 			break
 		}
@@ -68,10 +55,10 @@ func handler() {
 		}
 
 		// Strip newline off the end.
-		mutate(mi, objs, str[:len(str)-1])
+		mutate(mi, objs, str[:len(str)-1], &opts.Tags)
 	}
 
-	if *actual {
+	if !opts.DryRun {
 		err := mi.InsertBulk(ctx, objs)
 		if err != nil {
 			log.Fatalf("Oops %v", err)
@@ -81,7 +68,7 @@ func handler() {
 	}
 }
 
-func mutate(mi *objectstore.ObjectStore, objs map[string][]byte, line string) {
+func mutate(mi *objectstore.ObjectStore, objs map[string][]byte, line string, tags *util.Tags) {
 	var changed bool
 
 	b, err := hex.DecodeString(line)

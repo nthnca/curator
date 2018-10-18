@@ -38,12 +38,24 @@ func Register(app *kingpin.Application, actual *bool) {
 		})
 }
 
+type Options struct {
+	DryRun bool
+}
+
 type This struct {
 	ctx    context.Context
 	client *storage.Client
 	store  *objectstore.ObjectStore
 	dryRun bool
 	err    error
+}
+
+func Do(opts *Options) {
+	this := This{dryRun: opts.DryRun}
+	err := this.handler()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 }
 
 func (this *This) handler() error {
