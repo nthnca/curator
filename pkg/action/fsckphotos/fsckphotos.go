@@ -9,7 +9,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/pkg/config"
-	"github.com/nthnca/curator/pkg/mediainfo/message"
+	"github.com/nthnca/curator/pkg/mediainfo"
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
 	"google.golang.org/api/iterator"
@@ -45,7 +45,7 @@ func Do(opts *Options) error {
 
 	// What does the object store have.
 	os.ForEach(func(key string, value []byte) {
-		var m message.Media
+		var m mediainfo.Media
 		if er := proto.Unmarshal(value, &m); er != nil {
 			log.Fatalf("Unmarshalling proto: %v", er)
 		}

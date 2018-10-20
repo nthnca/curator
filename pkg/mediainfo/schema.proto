@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package message;
+package mediainfo;
 
 // This represents a single image. It may contain a set of different files for
 // example (.jpg, .raw, .mp4, etc) that have different resolutions or image
@@ -12,7 +12,7 @@ message Media {
   // This is the timestamp of when this Media object was last modified. When
   // you modify a media object, don't modify the current one, but just add a
   // new one with a new timestamp.
-  int64 timestamp_seconds = 2; // _since_epoch = 2;
+  int64 timestamp_seconds = 2;
 
   // Metadata for the image.
   PhotoInfo photo = 3;
@@ -24,12 +24,13 @@ message Media {
   string name = 5;
 
   // Allows us to tag images so we can easily sort and organize.
-  repeated string tags = 7; }
+  repeated string tags = 7;
+}
 
 // Information about the original media capture, this information shouldn't
 // change.
 message PhotoInfo {
-  int64 timestamp_seconds = 1; // _since_epoch = 1;
+  int64 timestamp_seconds = 1;
   string datetime = 10;
   string make = 2;
   string model = 3;

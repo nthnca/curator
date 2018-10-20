@@ -1,4 +1,4 @@
-package exif
+package mediainfo
 
 import (
 	"fmt"
@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/nthnca/curator/pkg/mediainfo/message"
 )
 
 var (
@@ -25,7 +23,7 @@ var (
 )
 
 // Parse populates a PhotoInfo protobuf with the exif data from the photo at 'path'.
-func Parse(path string) (*message.PhotoInfo, error) {
+func ParseExif(path string) (*PhotoInfo, error) {
 	cmd := exec.Command("identify", "-format", "%[exif:*]", path)
 	buffer, err := cmd.Output()
 	if err != nil {
@@ -33,7 +31,7 @@ func Parse(path string) (*message.PhotoInfo, error) {
 	}
 
 	output := string(buffer[:])
-	pi := &message.PhotoInfo{
+	pi := &PhotoInfo{
 		TimestampSeconds: getTime(output, reDateTime),
 		Datetime:         getString(output, reDateTime),
 		Make:             getString(output, reMake),
@@ -89,7 +87,7 @@ func getTime(buffer string, regex *regexp.Regexp) int64 {
 	return c.Unix()
 }
 
-func getFraction(buffer string, regex *regexp.Regexp) *message.Fraction {
+func getFraction(buffer string, regex *regexp.Regexp) *Fraction {
 	m := regex.FindStringSubmatch(buffer)
 	if len(m) != 2 {
 		return nil
@@ -109,7 +107,7 @@ func getFraction(buffer string, regex *regexp.Regexp) *message.Fraction {
 		}
 	}
 
-	return &message.Fraction{
+	return &Fraction{
 		Numerator:   int32(a),
 		Denominator: int32(b)}
 }

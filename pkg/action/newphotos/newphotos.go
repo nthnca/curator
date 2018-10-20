@@ -14,8 +14,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/pkg/config"
-	"github.com/nthnca/curator/pkg/mediainfo/exif"
-	"github.com/nthnca/curator/pkg/mediainfo/message"
+	"github.com/nthnca/curator/pkg/mediainfo"
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
 	"google.golang.org/api/iterator"
@@ -50,7 +49,7 @@ type action struct {
 
 type file struct {
 	attrs *storage.ObjectAttrs
-	info  *message.FileInfo
+	info  *mediainfo.FileInfo
 }
 
 // Do performs the new photos action, we should improve this documentation.
@@ -166,7 +165,7 @@ func (act *action) processPhotoSet(files []*file) error {
 	return nil
 }
 
-func (act *action) copyFiles(files []*file, metadata *message.Media) error {
+func (act *action) copyFiles(files []*file, metadata *mediainfo.Media) error {
 	for _, a := range files {
 		// name := a.hex
 		name := hex.EncodeToString(a.info.Sha256Sum)
@@ -196,7 +195,7 @@ func (act *action) copyFiles(files []*file, metadata *message.Media) error {
 	return nil
 }
 
-func (act *action) insertMetadata(metadata *message.Media) error {
+func (act *action) insertMetadata(metadata *mediainfo.Media) error {
 	if !act.dryRun {
 		data, err := proto.Marshal(metadata)
 		if err != nil {
@@ -224,9 +223,9 @@ func (act *action) deleteFiles(files []*file) error {
 }
 
 // attr is expected to contain exactly one JPG and zero or more other related files (RAWs for
-// example.) A message.Media object will contain the EXIF information from act JPG and basic file
+// example.) A mediainfo.Media object will contain the EXIF information from act JPG and basic file
 // information about the JPG and any other files included.
-func (act *action) createMediaProto(files []*file) (*message.Media, error) {
+func (act *action) createMediaProto(files []*file) (*mediainfo.Media, error) {
 	tmpfile, err := ioutil.TempFile("", "jpgpic")
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create temporary file: %v", err)
@@ -238,11 +237,11 @@ func (act *action) createMediaProto(files []*file) (*message.Media, error) {
 		return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 	}
 
-	var media message.Media
+	var media mediainfo.Media
 	media.File = append(media.File, fileinfo)
 	files[0].info = fileinfo
 
-	media.Photo, err = exif.Parse(tmpfile.Name())
+	media.Photo, err = mediainfo.ParseExif(tmpfile.Name())
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get EXIF data from JPG: %v", err)
 	}

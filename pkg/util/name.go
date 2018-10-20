@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/nthnca/curator/pkg/config"
-	"github.com/nthnca/curator/pkg/mediainfo/message"
+	"github.com/nthnca/curator/pkg/mediainfo"
 )
 
 // GetCanonicalName creates a standardize photo file name that looks like
 // <date>-<time>-<camera-model>-<filename>.jpg
-func GetCanonicalName(config *config.Config, media *message.Media) string {
+func GetCanonicalName(config *config.Config, media *mediainfo.Media) string {
 	if media.Photo.Datetime == "" {
 		return media.Name
 	}

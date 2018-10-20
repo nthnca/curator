@@ -12,7 +12,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
 	"github.com/nthnca/curator/pkg/config"
-	"github.com/nthnca/curator/pkg/mediainfo/message"
+	"github.com/nthnca/curator/pkg/mediainfo"
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
 )
@@ -89,7 +89,7 @@ func mutate(mi *objectstore.ObjectStore, objs map[string][]byte, line string, ta
 
 	value := mi.Get(hex.EncodeToString(b))
 
-	var p1 message.Media
+	var p1 mediainfo.Media
 	if er := proto.Unmarshal(value, &p1); er != nil {
 		log.Fatalf("Unmarshalling proto: %v", er)
 	}
