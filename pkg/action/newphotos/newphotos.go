@@ -143,13 +143,8 @@ func (act *action) processPhotoSet(files []*storage.ObjectAttrs) error {
 }
 
 func (act *action) copyFiles(files []*storage.ObjectAttrs, metadata *message.Media) error {
-	dryMsg := ""
-	if act.dryRun {
-		dryMsg = "DRY_RUN: "
-	}
-
 	for _, a := range files {
-		name := lookupSha256(a, metadata)
+		name := lookupFileName(metadata, a)
 		_, err := act.client.Bucket(config.PhotoStorageBucket()).Object(name).Attrs(act.ctx)
 		if err == nil {
 			log.Printf("File already exists: %v", name)
@@ -172,26 +167,27 @@ func (act *action) copyFiles(files []*storage.ObjectAttrs, metadata *message.Med
 	return nil
 }
 
-func lookupSha256(attr *storage.ObjectAttrs, m *message.Media) string {
+// We don't want to re-calculate the Sha256Sum for this file since we already calculated it.
+// Just find it again, if this fails we have really done something wrong, panic.
+func lookupFileName(attr *storage.ObjectAttrs, m *message.Media) string {
 	for _, mf := range m.File {
 		if util.MD5(mf.Md5Sum) == util.MD5(attr.MD5) {
 			return hex.EncodeToString(mf.Sha256Sum)
 		}
 	}
-	log.Fatalf("Unable to find file")
-	return ""
+	panic(fmt.Sprintf("Can't find the file, but just processed it ...", i))
 }
 
 func (act *action) insertMetadata(metadata *message.Media) error {
 	if !act.dryRun {
 		data, err := proto.Marshal(metadata)
 		if err != nil {
-			log.Fatalf("Failed to marshal proto: %v", err)
+			return fmt.Errorf("Failed to marshal proto: %v", err)
 		}
 
 		err = act.store.Insert(act.ctx, hex.EncodeToString(metadata.Key), data)
 		if err != nil {
-			log.Fatalf("action isn't good!: %v", err)
+			return fmt.Errorf("Attempting insert: %v", err)
 		}
 	}
 	return nil
@@ -202,7 +198,7 @@ func (act *action) deleteFiles(files []*storage.ObjectAttrs) error {
 		log.Printf("%sDeleting: %v/%v\n", "dryMsg", a.Bucket, a.Name)
 		if !act.dryRun {
 			if err := act.client.Bucket(a.Bucket).Object(a.Name).Delete(act.ctx); err != nil {
-				log.Fatalf("Failed to delete: %v", err)
+				return nil, fmt.Errorf("Failed to delete: %v", err)
 			}
 		}
 	}
@@ -225,6 +221,7 @@ func (act *action) createMediaProto(attr []*storage.ObjectAttrs) (*message.Media
 	}
 
 	if len(jpg) != 1 {
+		// This isn't fatal, just move on.
 		return nil, fmt.Errorf("Invalid set of JPGs found %s: %v",
 			attr[0].Name, jpg)
 	}
@@ -237,7 +234,7 @@ func (act *action) createMediaProto(attr []*storage.ObjectAttrs) (*message.Media
 
 	jpginfo, err := act.getFile(jpg[0], tmpfile)
 	if err != nil {
-		log.Fatalf("Failed to retrieve file: %v", err)
+		return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 	}
 
 	var media message.Media
@@ -245,14 +242,14 @@ func (act *action) createMediaProto(attr []*storage.ObjectAttrs) (*message.Media
 
 	mediainfo, err := exif.Parse(tmpfile.Name())
 	if err != nil {
-		log.Fatalf("Failed to get EXIF data from JPG: %v", err)
+		return nil, fmt.Errorf("Failed to get EXIF data from JPG: %v", err)
 	}
 	media.Photo = mediainfo
 
 	for _, a := range other {
 		info, err := act.getFile(a, nil)
 		if err != nil {
-			log.Fatalf("Failed to retrieve file: %v", err)
+			return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 		}
 		media.File = append(media.File, info)
 	}
