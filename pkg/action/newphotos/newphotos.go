@@ -233,7 +233,7 @@ func (act *action) createMediaProto(files []*file) (*message.Media, error) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	fileinfo, err := util.GetFile(act.client, act.ctx, files[0].attrs, tmpfile)
+	fileinfo, err := util.GetFile(act.ctx, act.client, files[0].attrs, tmpfile)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 	}
@@ -248,7 +248,7 @@ func (act *action) createMediaProto(files []*file) (*message.Media, error) {
 	}
 
 	for i := 1; i < len(files); i++ {
-		info, err := util.GetFile(act.client, act.ctx, files[1].attrs, nil)
+		info, err := util.GetFile(act.ctx, act.client, files[1].attrs, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 		}

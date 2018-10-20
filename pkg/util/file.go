@@ -34,7 +34,7 @@ func Suffix(a string) string {
 
 // GetFile retrieves a file and returns the MD5, SHA256, file name, and file size. If a file
 // was passed in it stores the file there.
-func GetFile(client *storage.Client, ctx context.Context, attrs *storage.ObjectAttrs, file *os.File) (*message.FileInfo, error) {
+func GetFile(ctx context.Context, client *storage.Client, attrs *storage.ObjectAttrs, file *os.File) (*message.FileInfo, error) {
 	rc, err := client.Bucket(attrs.Bucket).Object(attrs.Name).NewReader(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create reader: %v", err)
