@@ -1,10 +1,7 @@
 package newphotos
 
 import (
-	"bytes"
 	"context"
-	"crypto/md5"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -234,7 +231,7 @@ func (act *action) createMediaProto(files []*file) (*message.Media, error) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	fileinfo, err := act.getFile(files[0].attrs, tmpfile)
+	fileinfo, err := util.GetFile(act.client, act.ctx, files[0].attrs, tmpfile)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 	}
@@ -249,7 +246,7 @@ func (act *action) createMediaProto(files []*file) (*message.Media, error) {
 	}
 
 	for i := 1; i < len(files); i++ {
-		info, err := act.getFile(files[i].attrs, nil)
+		info, err := util.GetFile(act.client, act.ctx, files[1].attrs, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 		}
@@ -262,43 +259,4 @@ func (act *action) createMediaProto(files []*file) (*message.Media, error) {
 	media.Tags = []string{"new"}
 
 	return &media, nil
-}
-
-func (act *action) getFile(attrs *storage.ObjectAttrs, file *os.File) (*message.FileInfo, error) {
-	rc, err := act.client.Bucket(attrs.Bucket).Object(attrs.Name).NewReader(act.ctx)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create reader: %v", err)
-	}
-
-	slurp, err := ioutil.ReadAll(rc)
-	rc.Close()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read file: %v", err)
-	}
-
-	md := md5.Sum([]byte(slurp))
-	if !bytes.Equal(attrs.MD5, md[:]) {
-		return nil, fmt.Errorf("MD5 sum didn't match, file corrupted?")
-	}
-
-	sha := sha256.Sum256([]byte(slurp))
-	sub := strings.Split(attrs.Name, "/")
-	name := sub[len(sub)-1]
-
-	if file != nil {
-		if _, err := file.Write(slurp); err != nil {
-			return nil, fmt.Errorf("Failed to write file: %v", err)
-		}
-
-		if err := file.Close(); err != nil {
-			return nil, fmt.Errorf("Failed to close file: %v", err)
-		}
-	}
-
-	return &message.FileInfo{
-		Filename:    name,
-		Md5Sum:      md[:],
-		Sha256Sum:   sha[:],
-		SizeInBytes: attrs.Size,
-	}, nil
 }
