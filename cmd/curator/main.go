@@ -40,8 +40,7 @@ func main() {
 					return err
 				}
 				opts.DryRun = !actual
-				mutatephotos.Do(&opts)
-				return nil
+				return mutatephotos.Do(&opts)
 			})
 		cmd.Flag("add", "Labels to add").Short('a').StringsVar(&opts.Tags.A)
 		cmd.Flag("remove", "Labels to remove").Short('r').StringsVar(&opts.Tags.B)
@@ -58,8 +57,7 @@ func main() {
 				if err != nil {
 					return err
 				}
-				getphotos.Do(&opts)
-				return nil
+				return getphotos.Do(&opts)
 			})
 		cmd.Flag("filter", "description").StringVar(&opts.Filter)
 		cmd.Flag("max", "The maximum number of results to return").IntVar(&opts.Max)
@@ -77,8 +75,7 @@ func main() {
 				if err != nil {
 					return err
 				}
-				statphotos.Do(&opts)
-				return nil
+				return statphotos.Do(&opts)
 			})
 	}
 
@@ -92,8 +89,7 @@ func main() {
 				if err != nil {
 					return err
 				}
-				fsckphotos.Do(&opts)
-				return nil
+				return fsckphotos.Do(&opts)
 			})
 	}
 

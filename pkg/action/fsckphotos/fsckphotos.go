@@ -28,7 +28,7 @@ type Options struct {
 }
 
 // Do performs a system integrity check.
-func Do(opts *Options) {
+func Do(opts *Options) error {
 	ctx := opts.Ctx
 	client := opts.Storage
 	os := opts.ObjStore
@@ -119,4 +119,6 @@ func Do(opts *Options) {
 	log.Printf("Wanted Objects: %d", wantedObjects)
 	log.Printf("Extra Objects: %d", extraObjects)
 	log.Printf("Missing Objects: %d", missingObjects)
+
+	return nil
 }

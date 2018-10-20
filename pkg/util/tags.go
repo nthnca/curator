@@ -5,11 +5,13 @@ import (
 	"strings"
 )
 
+// Tags ...
 type Tags struct {
 	A []string
 	B []string
 }
 
+// Normalize ...
 func (tags *Tags) Normalize() {
 	normalize := func(arr []string) []string {
 		var tmp []string
@@ -23,6 +25,7 @@ func (tags *Tags) Normalize() {
 	tags.B = normalize(tags.B)
 }
 
+// Validate ...
 func (tags *Tags) Validate(allowed []string) {
 	allowedx := make(map[string]bool)
 
@@ -56,6 +59,7 @@ func (tags *Tags) Validate(allowed []string) {
 	dups(tags.B)
 }
 
+// Modify ...
 func (tags *Tags) Modify(labelList []string) ([]string, bool) {
 	changed := false
 	tagMap := make(map[string]bool)
@@ -80,6 +84,7 @@ func (tags *Tags) Modify(labelList []string) ([]string, bool) {
 	return rv, changed
 }
 
+// Match ....
 func (tags *Tags) Match(labelList []string) bool {
 	for _, a := range tags.A {
 		match := false

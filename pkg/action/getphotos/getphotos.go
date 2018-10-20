@@ -36,7 +36,7 @@ type Options struct {
 }
 
 // Do retrieves the set of photos that match the given parameters.
-func Do(opts *Options) {
+func Do(opts *Options) error {
 	os := opts.ObjStore
 
 	opts.Tags.Normalize()
@@ -68,4 +68,5 @@ func Do(opts *Options) {
 	})
 
 	log.Printf("Photos retrieved: %d", count)
+	return nil
 }

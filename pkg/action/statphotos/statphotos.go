@@ -26,7 +26,7 @@ type Options struct {
 }
 
 // Do outputs a basic set of stats (number of files, storage space used, tags, etc) about the set of photos stored.
-func Do(opts *Options) {
+func Do(opts *Options) error {
 	os := opts.ObjStore
 
 	var arr []*message.Media
@@ -82,6 +82,7 @@ func Do(opts *Options) {
 	for k := range tagcount {
 		fmt.Printf("  %s %d\n", k, tagcount[k])
 	}
+	return nil
 }
 
 func gb(bytes int64) string {

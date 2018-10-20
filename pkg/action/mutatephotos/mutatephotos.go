@@ -36,7 +36,7 @@ type Options struct {
 }
 
 // Do performs a set of mutations on the listed photos.
-func Do(opts *Options) {
+func Do(opts *Options) error {
 	ctx := opts.Ctx
 	mi := opts.ObjStore
 
@@ -72,6 +72,8 @@ func Do(opts *Options) {
 	} else {
 		log.Printf("Running in dry run mode, no changes made")
 	}
+
+	return nil
 }
 
 func mutate(mi *objectstore.ObjectStore, objs map[string][]byte, line string, tags *util.Tags) {
