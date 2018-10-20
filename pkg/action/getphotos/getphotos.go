@@ -64,7 +64,7 @@ func Do(opts *Options) error {
 		}
 
 		name := util.GetCanonicalName(opts.Cfg, &m, 0)
-		if opts.Filter != "" && opts.Filter != name[:len(opts.Filter)] {
+		if len(opts.Filter) > len(name) || opts.Filter != name[:len(opts.Filter)] {
 			return
 		}
 
