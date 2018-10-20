@@ -21,8 +21,18 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-// Options is the set of valid options for the NewPhotos action.
+// Options allows you to modify the behavior of the NewPhotos action.
 type Options struct {
+	// Ctx is a valid context.Context to run this command under.
+	Ctx context.Context
+
+	// Storage is a Google Cloud Storage client.
+	Storage *storage.Client
+
+	// ObjStore is an ObjectStore client
+	ObjStore *objectstore.ObjectStore
+
+	// DryRun. If true don't actually make any changes, but print the changes you would have made.
 	DryRun bool
 }
 
@@ -44,23 +54,10 @@ func Do(opts *Options) error {
 	var act action
 	act.numThreads = 1
 	act.dryRun = opts.DryRun
-	act.ctx = context.Background()
+	act.ctx = opts.Ctx
+	act.client = opts.Storage
+	act.store = opts.ObjStore
 
-	var err error
-	act.client, err = storage.NewClient(act.ctx)
-	if err != nil {
-		return fmt.Errorf("Failed to create client: %v", err)
-	}
-
-	act.store, err = objectstore.New(act.ctx, act.client, config.MetadataBucket(), config.MetadataPath())
-	if err != nil {
-		return fmt.Errorf("New ObjectStore failed: %v", err)
-	}
-
-	return act.processPhotos()
-}
-
-func (act *action) processPhotos() error {
 	var fatalError error
 	var wg sync.WaitGroup
 	chSet := make(chan []*file)
@@ -111,7 +108,7 @@ func (act *action) processPhotos() error {
 		f := &file{attrs: obj}
 
 		// set has jpgs first, other files after.
-		if IsJpg(f.attrs.Name) {
+		if isJpg(f.attrs.Name) {
 			set = append([]*file{f}, set...)
 		} else {
 			set = append(set, f)
@@ -123,7 +120,7 @@ func (act *action) processPhotos() error {
 	return fatalError
 }
 
-func IsJpg(name string) bool {
+func isJpg(name string) bool {
 	return strings.ToLower(util.Suffix(name)) == "jpg" ||
 		strings.ToLower(util.Suffix(name)) == "jpeg"
 }
@@ -136,7 +133,7 @@ func (act *action) dryRunMsg() string {
 }
 
 func (act *action) processPhotoSet(files []*file) error {
-	if !IsJpg(files[0].attrs.Name) || (len(files) > 1 && IsJpg(files[1].attrs.Name)) {
+	if !isJpg(files[0].attrs.Name) || (len(files) > 1 && isJpg(files[1].attrs.Name)) {
 		log.Printf("Need exactly 1 jpg file: %s", files[0].attrs.Name)
 		// This isn't an error, but we can't continue processing this set.
 		return nil

@@ -8,27 +8,26 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
-	"github.com/nthnca/curator/pkg/config"
 	"github.com/nthnca/curator/pkg/mediainfo/message"
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
 )
 
-func gb(bytes int64) string {
-	return fmt.Sprintf("%d.%d GB", bytes/1000000000, (bytes/100000000)%10)
+// Options allows you to modify the behavior of the StatPhotos action.
+type Options struct {
+	// Ctx is a valid context.Context to run this command under.
+	Ctx context.Context
+
+	// Storage is a Google Cloud Storage client.
+	Storage *storage.Client
+
+	// ObjStore is an ObjectStore client
+	ObjStore *objectstore.ObjectStore
 }
 
-func Do() {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-
-	os, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
-	if err != nil {
-		log.Fatalf("New ObjectStore failed: %v", err)
-	}
+// Do outputs a basic set of stats (number of files, storage space used, tags, etc) about the set of photos stored.
+func Do(opts *Options) {
+	os := opts.ObjStore
 
 	var arr []*message.Media
 	os.ForEach(func(key string, value []byte) {
@@ -83,4 +82,8 @@ func Do() {
 	for k := range tagcount {
 		fmt.Printf("  %s %d\n", k, tagcount[k])
 	}
+}
+
+func gb(bytes int64) string {
+	return fmt.Sprintf("%d.%d GB", bytes/1000000000, (bytes/100000000)%10)
 }

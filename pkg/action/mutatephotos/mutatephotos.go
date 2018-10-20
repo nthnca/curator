@@ -17,22 +17,28 @@ import (
 	objectstore "github.com/nthnca/object-store"
 )
 
+// Options allows you to modify the behavior of the MutatePhotos action.
 type Options struct {
-	Tags   util.Tags
+	// Ctx is a valid context.Context to run this command under.
+	Ctx context.Context
+
+	// Storage is a Google Cloud Storage client.
+	Storage *storage.Client
+
+	// ObjStore is an ObjectStore client.
+	ObjStore *objectstore.ObjectStore
+
+	// Tags is the set of photos to add and remove.
+	Tags util.Tags
+
+	// DryRun if True then actually perform the modifications, otherwise just print what would happen.
 	DryRun bool
 }
 
+// Do performs a set of mutations on the listed photos.
 func Do(opts *Options) {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-
-	mi, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
-	if err != nil {
-		log.Fatalf("New ObjectStore failed: %v", err)
-	}
+	ctx := opts.Ctx
+	mi := opts.ObjStore
 
 	opts.Tags.Normalize()
 	opts.Tags.Validate(config.ValidLabels())

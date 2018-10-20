@@ -15,18 +15,23 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-// Do performs a system integrity check.
-func Do() {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
+// Options allows you to modify the behavior of the FsckPhotos action.
+type Options struct {
+	// Ctx is a valid context.Context to run this command under.
+	Ctx context.Context
 
-	os, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
-	if err != nil {
-		log.Fatalf("New ObjectStore failed: %v", err)
-	}
+	// Storage is a Google Cloud Storage client.
+	Storage *storage.Client
+
+	// ObjStore is an ObjectStore client
+	ObjStore *objectstore.ObjectStore
+}
+
+// Do performs a system integrity check.
+func Do(opts *Options) {
+	ctx := opts.Ctx
+	client := opts.Storage
+	os := opts.ObjStore
 
 	totalObjects := 0
 	wantedObjects := 0

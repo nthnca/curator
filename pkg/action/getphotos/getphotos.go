@@ -14,23 +14,30 @@ import (
 	objectstore "github.com/nthnca/object-store"
 )
 
+// Options allows you to modify the behavior of the GetPhotos action.
 type Options struct {
+	// Ctx is a valid context.Context to run this command under.
+	Ctx context.Context
+
+	// Storage is a Google Cloud Storage client.
+	Storage *storage.Client
+
+	// ObjStore is an ObjectStore client.
+	ObjStore *objectstore.ObjectStore
+
+	// Filter is a prefix which to match photots to.
 	Filter string
-	Max    int
-	Tags   util.Tags
+
+	// Max is the maximum number of photos to list.
+	Max int
+
+	// Tags is a query that will be used to filter which photos to list.
+	Tags util.Tags
 }
 
+// Do retrieves the set of photos that match the given parameters.
 func Do(opts *Options) {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-
-	os, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
-	if err != nil {
-		log.Fatalf("New ObjectStore failed: %v", err)
-	}
+	os := opts.ObjStore
 
 	opts.Tags.Normalize()
 	opts.Tags.Validate(config.ValidLabels())
