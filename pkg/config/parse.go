@@ -1,94 +1,71 @@
 package config
 
-//go:generate protoc --go_out=. config.proto
-
 import (
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/nthnca/curator/pkg/config/internal"
 )
 
-const (
-	StorageBucket = ""
-	ProjectID     = ""
-	PhotoPath     = ""
-	Path          = ""
-)
-
-var (
-	instance     CuratorConfig
-	once         sync.Once
+type Config struct {
+	instance     internal.CuratorConfig
 	cameraModels map[string]string
-)
+}
 
-func CameraModelAbbreviation(name string) string {
-	parse()
-
-	m, ok := cameraModels[name]
+func (config *Config) CameraModelAbbreviation(name string) string {
+	m, ok := config.cameraModels[name]
 	if !ok {
 		return "UNKNOWN"
 	}
 	return m
 }
 
-func PhotoQueueBucket() string {
-	parse()
-
-	return instance.PhotoQueueBucket
+func (config *Config) PhotoQueueBucket() string {
+	return config.instance.PhotoQueueBucket
 }
 
-func PhotoStorageBucket() string {
-	parse()
-
-	return instance.PhotoStorageBucket
+func (config *Config) PhotoStorageBucket() string {
+	return config.instance.PhotoStorageBucket
 }
 
-func ValidLabels() []string {
-	parse()
-
-	return instance.ValidLabels
+func (config *Config) ValidLabels() []string {
+	return config.instance.ValidLabels
 }
 
-func MediaInfoBucket() string {
-	parse()
-
-	return instance.PhotoInfoBucket
+func (config *Config) MediaInfoBucket() string {
+	return config.instance.PhotoInfoBucket
 }
 
-func MetadataBucket() string {
-	parse()
-
-	return instance.PhotoMetadataBucket
+func (config *Config) MetadataBucket() string {
+	return config.instance.PhotoMetadataBucket
 }
 
-func MetadataPath() string {
-	parse()
-
-	return instance.PhotoMetadataPath
+func (config *Config) MetadataPath() string {
+	return config.instance.PhotoMetadataPath
 }
 
-func parse() {
-	once.Do(func() {
-		config_file := os.Getenv("CONFIG_FILE")
+func New() *Config {
+	config_file := os.Getenv("CONFIG_FILE")
 
-		log.Printf("Loading config from: %s", config_file)
-		config, err := ioutil.ReadFile(filepath.Join(config_file))
-		if err != nil {
-			log.Fatalf("Failed to read config: %v", err)
-		}
+	log.Printf("Loading config from: %s", config_file)
+	data, err := ioutil.ReadFile(filepath.Join(config_file))
+	if err != nil {
+		log.Fatalf("Failed to read config: %v", err)
+	}
 
-		err = proto.UnmarshalText(string(config), &instance)
-		if err != nil {
-			log.Fatalf("Failed to parse config: %v", err)
-		}
+	cfg := Config{}
+	err = proto.UnmarshalText(string(data), &cfg.instance)
+	if err != nil {
+		log.Fatalf("Failed to parse config: %v", err)
+	}
 
-		cameraModels = make(map[string]string)
-		for _, o := range instance.CameraModels {
-			cameraModels[o.ExifModel] = o.Abbreviation
-		}
-	})
+	cfg.cameraModels = make(map[string]string)
+	for _, o := range cfg.instance.CameraModels {
+		cfg.cameraModels[o.ExifModel] = o.Abbreviation
+	}
+
+	return &cfg
 }

@@ -35,7 +35,7 @@ func main() {
 		cmd.Action(
 			func(_ *kingpin.ParseContext) error {
 				var err error
-				opts.Ctx, opts.Storage, opts.ObjStore, err = setup()
+				opts.Ctx, opts.Storage, opts.ObjStore, opts.Cfg, err = setup()
 				if err != nil {
 					return err
 				}
@@ -53,7 +53,7 @@ func main() {
 		cmd.Action(
 			func(_ *kingpin.ParseContext) error {
 				var err error
-				opts.Ctx, opts.Storage, opts.ObjStore, err = setup()
+				opts.Ctx, opts.Storage, opts.ObjStore, opts.Cfg, err = setup()
 				if err != nil {
 					return err
 				}
@@ -71,7 +71,7 @@ func main() {
 		app.Command("stats", "analyze curator data").Action(
 			func(_ *kingpin.ParseContext) error {
 				var err error
-				opts.Ctx, opts.Storage, opts.ObjStore, err = setup()
+				opts.Ctx, opts.Storage, opts.ObjStore, opts.Cfg, err = setup()
 				if err != nil {
 					return err
 				}
@@ -85,7 +85,7 @@ func main() {
 		app.Command("fsck", "Validate photos are intact").Action(
 			func(_ *kingpin.ParseContext) error {
 				var err error
-				opts.Ctx, opts.Storage, opts.ObjStore, err = setup()
+				opts.Ctx, opts.Storage, opts.ObjStore, opts.Cfg, err = setup()
 				if err != nil {
 					return err
 				}
@@ -99,7 +99,7 @@ func main() {
 		app.Command("new", "Process new photos").Action(
 			func(_ *kingpin.ParseContext) error {
 				var err error
-				opts.Ctx, opts.Storage, opts.ObjStore, err = setup()
+				opts.Ctx, opts.Storage, opts.ObjStore, opts.Cfg, err = setup()
 				if err != nil {
 					return err
 				}
@@ -111,17 +111,20 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func setup() (context.Context, *storage.Client, *objectstore.ObjectStore, error) {
+func setup() (context.Context, *storage.Client, *objectstore.ObjectStore, *config.Config, error) {
 	ctx := context.Background()
+
+	cfg := config.New()
+
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create GCS client: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to create GCS client: %v", err)
 	}
 
-	os, err := objectstore.New(ctx, client, config.MetadataBucket(), config.MetadataPath())
+	os, err := objectstore.New(ctx, client, cfg.MetadataBucket(), cfg.MetadataPath())
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create ObjectStore client: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to create ObjectStore client: %v", err)
 	}
 
-	return ctx, client, os, nil
+	return ctx, client, os, cfg, nil
 }

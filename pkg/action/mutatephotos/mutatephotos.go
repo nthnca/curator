@@ -28,6 +28,9 @@ type Options struct {
 	// ObjStore is an ObjectStore client.
 	ObjStore *objectstore.ObjectStore
 
+	// Cfg is the configuration settings.
+	Cfg *config.Config
+
 	// Tags is the set of photos to add and remove.
 	Tags util.Tags
 
@@ -41,7 +44,7 @@ func Do(opts *Options) error {
 	mi := opts.ObjStore
 
 	opts.Tags.Normalize()
-	opts.Tags.Validate(config.ValidLabels())
+	opts.Tags.Validate(opts.Cfg.ValidLabels())
 
 	log.Printf("--add %s", opts.Tags.A)
 	log.Printf("--remove %s", opts.Tags.B)

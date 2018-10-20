@@ -25,6 +25,9 @@ type Options struct {
 	// ObjStore is an ObjectStore client.
 	ObjStore *objectstore.ObjectStore
 
+	// Cfg is the configuration settings.
+	Cfg *config.Config
+
 	// Filter is a prefix which to match photots to.
 	Filter string
 
@@ -40,7 +43,7 @@ func Do(opts *Options) error {
 	os := opts.ObjStore
 
 	opts.Tags.Normalize()
-	opts.Tags.Validate(config.ValidLabels())
+	opts.Tags.Validate(opts.Cfg.ValidLabels())
 
 	count := 0
 	os.ForEach(func(key string, value []byte) {
@@ -58,7 +61,7 @@ func Do(opts *Options) error {
 			return
 		}
 
-		name := util.GetCanonicalName(&iter)
+		name := util.GetCanonicalName(opts.Cfg, &iter)
 		if opts.Filter != "" && opts.Filter != name[:len(opts.Filter)] {
 			return
 		}

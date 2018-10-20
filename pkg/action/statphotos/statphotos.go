@@ -8,6 +8,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
+	"github.com/nthnca/curator/pkg/config"
 	"github.com/nthnca/curator/pkg/mediainfo/message"
 	"github.com/nthnca/curator/pkg/util"
 	objectstore "github.com/nthnca/object-store"
@@ -23,6 +24,9 @@ type Options struct {
 
 	// ObjStore is an ObjectStore client
 	ObjStore *objectstore.ObjectStore
+
+	// Cfg is the configuration settings.
+	Cfg *config.Config
 }
 
 // Do outputs a basic set of stats (number of files, storage space used, tags, etc) about the set of photos stored.
@@ -50,7 +54,7 @@ func Do(opts *Options) error {
 	var ysize int64
 
 	for i, y := range arr {
-		name := util.GetCanonicalName(y)
+		name := util.GetCanonicalName(opts.Cfg, y)
 		sort.Strings(y.Tags)
 
 		var size int64
@@ -66,7 +70,7 @@ func Do(opts *Options) error {
 		ycount++
 		ysize += size
 
-		if i+1 == len(arr) || name[:4] != util.GetCanonicalName(arr[i+1])[:4] {
+		if i+1 == len(arr) || name[:4] != util.GetCanonicalName(opts.Cfg, arr[i+1])[:4] {
 			fmt.Printf("%s (%s)\n", name[:4], gb(ysize))
 			for k := range ytagcount {
 				fmt.Printf("  %s %d\n", k, ytagcount[k])

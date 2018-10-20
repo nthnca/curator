@@ -25,6 +25,9 @@ type Options struct {
 
 	// ObjStore is an ObjectStore client
 	ObjStore *objectstore.ObjectStore
+
+	// Cfg is the configuration settings.
+	Cfg *config.Config
 }
 
 // Do performs a system integrity check.
@@ -60,7 +63,7 @@ func Do(opts *Options) error {
 	})
 
 	// Any storage entries that we didn't expect?
-	bkt := client.Bucket(config.PhotoStorageBucket())
+	bkt := client.Bucket(opts.Cfg.PhotoStorageBucket())
 	for it := bkt.Objects(ctx, nil); ; {
 		obj, err := it.Next()
 		if err == iterator.Done {

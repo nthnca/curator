@@ -32,7 +32,10 @@ type Options struct {
 	// ObjStore is an ObjectStore client
 	ObjStore *objectstore.ObjectStore
 
-	// DryRun. If true don't actually make any changes, but print the changes you would have made.
+	// Cfg is the configuration settings.
+	Cfg *config.Config
+
+	// DryRun. If true don't actually make changes, print the changes you would have made.
 	DryRun bool
 }
 
@@ -40,6 +43,7 @@ type action struct {
 	ctx        context.Context
 	client     *storage.Client
 	store      *objectstore.ObjectStore
+	cfg        *config.Config
 	numThreads int
 	dryRun     bool
 }
@@ -57,6 +61,7 @@ func Do(opts *Options) error {
 	act.ctx = opts.Ctx
 	act.client = opts.Storage
 	act.store = opts.ObjStore
+	act.cfg = opts.Cfg
 
 	var fatalError error
 	var wg sync.WaitGroup
@@ -81,9 +86,9 @@ func Do(opts *Options) error {
 	}
 
 	// Ordering is guaranteed: https://cloud.google.com/storage/docs/listing-objects
-	log.Printf("Looking for photos in: %s", config.PhotoQueueBucket())
+	log.Printf("Looking for photos in: %s", act.cfg.PhotoQueueBucket())
 	set := []*file{}
-	bkt := act.client.Bucket(config.PhotoQueueBucket())
+	bkt := act.client.Bucket(act.cfg.PhotoQueueBucket())
 	for it := bkt.Objects(act.ctx, nil); ; {
 		obj, err := it.Next()
 		if err == iterator.Done {
@@ -167,9 +172,9 @@ func (act *action) copyFiles(files []*file, metadata *message.Media) error {
 		name := hex.EncodeToString(a.info.Sha256Sum)
 
 		log.Printf("%sCopying: %v/%v -> %v/%v\n",
-			act.dryRunMsg(), a.attrs.Bucket, a.attrs.Name, config.PhotoStorageBucket(), name)
+			act.dryRunMsg(), a.attrs.Bucket, a.attrs.Name, act.cfg.PhotoStorageBucket(), name)
 
-		_, err := act.client.Bucket(config.PhotoStorageBucket()).Object(name).Attrs(act.ctx)
+		_, err := act.client.Bucket(act.cfg.PhotoStorageBucket()).Object(name).Attrs(act.ctx)
 		if err == nil {
 			log.Printf("No need to copy, file already exists: %v", name)
 			continue
@@ -181,7 +186,7 @@ func (act *action) copyFiles(files []*file, metadata *message.Media) error {
 
 		if !act.dryRun {
 			src := act.client.Bucket(a.attrs.Bucket).Object(a.attrs.Name)
-			dest := act.client.Bucket(config.PhotoStorageBucket()).Object(name)
+			dest := act.client.Bucket(act.cfg.PhotoStorageBucket()).Object(name)
 			_, err = dest.CopierFrom(src).Run(act.ctx)
 			if err != nil {
 				return fmt.Errorf("Copying file: %v", err)
