@@ -108,6 +108,16 @@ func main() {
 			})
 	}
 
+	{
+		// View the configuration
+		app.Command("config", "Print the current configuration").Action(
+			func(_ *kingpin.ParseContext) error {
+				var err error
+				fmt.Printf(config.New().ToString())
+				return err
+			})
+	}
+
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 

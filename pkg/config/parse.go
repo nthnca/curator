@@ -50,6 +50,11 @@ func (config *Config) MetadataPath() string {
 	return config.instance.PhotoMetadataPath
 }
 
+// Print will print the current config (or a default config).
+func (config *Config) ToString() string {
+	return proto.MarshalTextString(&config.instance)
+}
+
 // New parses the users configuration and returns a Config.
 func New() *Config {
 	configFile := os.Getenv("CONFIG_FILE")
