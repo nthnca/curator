@@ -37,14 +37,17 @@ type action struct {
 	dryRun     bool
 }
 
+type file struct {
+	attrs *storage.ObjectAttrs
+	info  *message.FileInfo
+}
+
 // Do performs the new photos action, we should improve this documentation.
 func Do(opts *Options) error {
 	var act action
 	act.numThreads = 1
 	act.dryRun = opts.DryRun
 	act.ctx = context.Background()
-
-	log.Printf("Dry Run: %v", act.dryRun)
 
 	var err error
 	act.client, err = storage.NewClient(act.ctx)
@@ -63,7 +66,7 @@ func Do(opts *Options) error {
 func (act *action) processPhotos() error {
 	var fatalError error
 	var wg sync.WaitGroup
-	chSet := make(chan []*storage.ObjectAttrs)
+	chSet := make(chan []*file)
 
 	for i := 0; i < act.numThreads; i++ {
 		wg.Add(1)
@@ -85,7 +88,7 @@ func (act *action) processPhotos() error {
 
 	// Ordering is guaranteed: https://cloud.google.com/storage/docs/listing-objects
 	log.Printf("Looking for photos in: %s", config.PhotoQueueBucket())
-	set := []*storage.ObjectAttrs{}
+	set := []*file{}
 	bkt := act.client.Bucket(config.PhotoQueueBucket())
 	for it := bkt.Objects(act.ctx, nil); ; {
 		obj, err := it.Next()
@@ -102,12 +105,20 @@ func (act *action) processPhotos() error {
 			break
 		}
 
-		if len(set) > 0 && util.Base(set[0].Name) != util.Base(obj.Name) {
+		if len(set) > 0 && util.Base(set[0].attrs.Name) != util.Base(obj.Name) {
 			chSet <- set
 			// Reset "set", don't want to modify after passing it along.
-			set = []*storage.ObjectAttrs{}
+			set = []*file{}
 		}
-		set = append(set, obj)
+
+		f := &file{attrs: obj}
+
+		// set has jpgs first, other files after.
+		if IsJpg(f.attrs.Name) {
+			set = append([]*file{f}, set...)
+		} else {
+			set = append(set, f)
+		}
 	}
 	close(chSet)
 	wg.Wait()
@@ -115,15 +126,29 @@ func (act *action) processPhotos() error {
 	return fatalError
 }
 
-func (act *action) processPhotoSet(files []*storage.ObjectAttrs) error {
-	media, err := act.createMediaProto(files)
-	if err != nil {
-		// log.Printf("Failed to process files: %v", err)
-		// return nil
-		return fmt.Errorf("Failed to process files: %v", err)
+func IsJpg(name string) bool {
+	return strings.ToLower(util.Suffix(name)) == "jpg" ||
+		strings.ToLower(util.Suffix(name)) == "jpeg"
+}
+
+func (act *action) dryRunMsg() string {
+	if act.dryRun {
+		return "[DRY RUN] "
+	}
+	return ""
+}
+
+func (act *action) processPhotoSet(files []*file) error {
+	if !IsJpg(files[0].attrs.Name) || (len(files) > 1 && IsJpg(files[1].attrs.Name)) {
+		log.Printf("Need exactly 1 jpg file: %s", files[0].attrs.Name)
+		// This isn't an error, but we can't continue processing this set.
+		return nil
 	}
 
-	// log.Fatalf("PROTO OUTPUT:\n%v", proto.MarshalTextString(media))
+	media, err := act.createMediaProto(files)
+	if err != nil {
+		return fmt.Errorf("Failed to process files: %v", err)
+	}
 
 	err = act.copyFiles(files, media)
 	if err != nil {
@@ -142,40 +167,34 @@ func (act *action) processPhotoSet(files []*storage.ObjectAttrs) error {
 	return nil
 }
 
-func (act *action) copyFiles(files []*storage.ObjectAttrs, metadata *message.Media) error {
+func (act *action) copyFiles(files []*file, metadata *message.Media) error {
 	for _, a := range files {
-		name := lookupFileName(metadata, a)
+		// name := a.hex
+		name := hex.EncodeToString(a.info.Sha256Sum)
+
+		log.Printf("%sCopying: %v/%v -> %v/%v\n",
+			act.dryRunMsg(), a.attrs.Bucket, a.attrs.Name, config.PhotoStorageBucket(), name)
+
 		_, err := act.client.Bucket(config.PhotoStorageBucket()).Object(name).Attrs(act.ctx)
 		if err == nil {
-			log.Printf("File already exists: %v", name)
+			log.Printf("No need to copy, file already exists: %v", name)
 			continue
 		}
-		if err != nil && err != storage.ErrObjectNotExist {
-			log.Fatalf("Error checking for file: %v, %v", name, err)
+
+		if err != storage.ErrObjectNotExist {
+			return fmt.Errorf("Checking for file: %v, %v", name, err)
 		}
-		log.Printf("%sCopying: %v/%v -> %v/%v\n",
-			dryMsg, a.Bucket, a.Name, config.PhotoStorageBucket(), name)
+
 		if !act.dryRun {
-			src := act.client.Bucket(a.Bucket).Object(a.Name)
+			src := act.client.Bucket(a.attrs.Bucket).Object(a.attrs.Name)
 			dest := act.client.Bucket(config.PhotoStorageBucket()).Object(name)
 			_, err = dest.CopierFrom(src).Run(act.ctx)
 			if err != nil {
-				log.Fatalf("Failed to write file: %v", err)
+				return fmt.Errorf("Copying file: %v", err)
 			}
 		}
 	}
 	return nil
-}
-
-// We don't want to re-calculate the Sha256Sum for this file since we already calculated it.
-// Just find it again, if this fails we have really done something wrong, panic.
-func lookupFileName(attr *storage.ObjectAttrs, m *message.Media) string {
-	for _, mf := range m.File {
-		if util.MD5(mf.Md5Sum) == util.MD5(attr.MD5) {
-			return hex.EncodeToString(mf.Sha256Sum)
-		}
-	}
-	panic(fmt.Sprintf("Can't find the file, but just processed it ...", i))
 }
 
 func (act *action) insertMetadata(metadata *message.Media) error {
@@ -193,12 +212,12 @@ func (act *action) insertMetadata(metadata *message.Media) error {
 	return nil
 }
 
-func (act *action) deleteFiles(files []*storage.ObjectAttrs) error {
+func (act *action) deleteFiles(files []*file) error {
 	for _, a := range files {
-		log.Printf("%sDeleting: %v/%v\n", "dryMsg", a.Bucket, a.Name)
+		log.Printf("%sDeleting: %v/%v\n", act.dryRunMsg(), a.attrs.Bucket, a.attrs.Name)
 		if !act.dryRun {
-			if err := act.client.Bucket(a.Bucket).Object(a.Name).Delete(act.ctx); err != nil {
-				return nil, fmt.Errorf("Failed to delete: %v", err)
+			if err := act.client.Bucket(a.attrs.Bucket).Object(a.attrs.Name).Delete(act.ctx); err != nil {
+				return fmt.Errorf("Failed to delete: %v", err)
 			}
 		}
 	}
@@ -208,50 +227,34 @@ func (act *action) deleteFiles(files []*storage.ObjectAttrs) error {
 // attr is expected to contain exactly one JPG and zero or more other related files (RAWs for
 // example.) A message.Media object will contain the EXIF information from act JPG and basic file
 // information about the JPG and any other files included.
-func (act *action) createMediaProto(attr []*storage.ObjectAttrs) (*message.Media, error) {
-	var jpg []*storage.ObjectAttrs
-	var other []*storage.ObjectAttrs
-	for _, a := range attr {
-		if strings.ToLower(util.Suffix(a.Name)) == "jpg" ||
-			strings.ToLower(util.Suffix(a.Name)) == "jpeg" {
-			jpg = append(jpg, a)
-		} else {
-			other = append(other, a)
-		}
-	}
-
-	if len(jpg) != 1 {
-		// This isn't fatal, just move on.
-		return nil, fmt.Errorf("Invalid set of JPGs found %s: %v",
-			attr[0].Name, jpg)
-	}
-
+func (act *action) createMediaProto(files []*file) (*message.Media, error) {
 	tmpfile, err := ioutil.TempFile("", "jpgpic")
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create temporary file: %v", err)
 	}
 	defer os.Remove(tmpfile.Name())
 
-	jpginfo, err := act.getFile(jpg[0], tmpfile)
+	fileinfo, err := act.getFile(files[0].attrs, tmpfile)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 	}
 
 	var media message.Media
-	media.File = append(media.File, jpginfo)
+	media.File = append(media.File, fileinfo)
+	files[0].info = fileinfo
 
-	mediainfo, err := exif.Parse(tmpfile.Name())
+	media.Photo, err = exif.Parse(tmpfile.Name())
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get EXIF data from JPG: %v", err)
 	}
-	media.Photo = mediainfo
 
-	for _, a := range other {
-		info, err := act.getFile(a, nil)
+	for i := 1; i < len(files); i++ {
+		info, err := act.getFile(files[i].attrs, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 		}
 		media.File = append(media.File, info)
+		files[i].info = info
 	}
 
 	media.Key = media.File[0].Sha256Sum
@@ -261,8 +264,8 @@ func (act *action) createMediaProto(attr []*storage.ObjectAttrs) (*message.Media
 	return &media, nil
 }
 
-func (act *action) getFile(attr *storage.ObjectAttrs, file *os.File) (*message.FileInfo, error) {
-	rc, err := act.client.Bucket(attr.Bucket).Object(attr.Name).NewReader(act.ctx)
+func (act *action) getFile(attrs *storage.ObjectAttrs, file *os.File) (*message.FileInfo, error) {
+	rc, err := act.client.Bucket(attrs.Bucket).Object(attrs.Name).NewReader(act.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create reader: %v", err)
 	}
@@ -274,12 +277,12 @@ func (act *action) getFile(attr *storage.ObjectAttrs, file *os.File) (*message.F
 	}
 
 	md := md5.Sum([]byte(slurp))
-	if !bytes.Equal(attr.MD5, md[:]) {
+	if !bytes.Equal(attrs.MD5, md[:]) {
 		return nil, fmt.Errorf("MD5 sum didn't match, file corrupted?")
 	}
 
 	sha := sha256.Sum256([]byte(slurp))
-	sub := strings.Split(attr.Name, "/")
+	sub := strings.Split(attrs.Name, "/")
 	name := sub[len(sub)-1]
 
 	if file != nil {
@@ -296,6 +299,6 @@ func (act *action) getFile(attr *storage.ObjectAttrs, file *os.File) (*message.F
 		Filename:    name,
 		Md5Sum:      md[:],
 		Sha256Sum:   sha[:],
-		SizeInBytes: attr.Size,
+		SizeInBytes: attrs.Size,
 	}, nil
 }
