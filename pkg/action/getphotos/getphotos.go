@@ -36,6 +36,9 @@ type Options struct {
 
 	// Tags is a query that will be used to filter which photos to list.
 	Tags util.Tags
+
+	// All means to return all files, not just the initial jpg.
+	All bool
 }
 
 // Do retrieves the set of photos that match the given parameters.
@@ -70,7 +73,10 @@ func Do(opts *Options) error {
 		for i, f := range m.File {
 			name := util.GetCanonicalName(opts.Cfg, &m, i)
 			fmt.Printf("%s %s\n", hex.EncodeToString(f.Sha256Sum), name)
-			break
+
+			if !opts.All {
+				break
+			}
 		}
 	})
 

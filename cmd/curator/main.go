@@ -63,6 +63,7 @@ func main() {
 		cmd.Flag("max", "The maximum number of results to return").IntVar(&opts.Max)
 		cmd.Flag("has", "Has labels").StringsVar(&opts.Tags.A)
 		cmd.Flag("not", "Not labels").StringsVar(&opts.Tags.B)
+		cmd.Flag("all", "All files of image").BoolVar(&opts.All)
 	}
 
 	{

@@ -29,5 +29,9 @@ func GetCanonicalName(config *config.Config, media *mediainfo.Media, index int) 
 
 	m := config.CameraModelAbbreviation(model)
 
-	return fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, m, key)
+	if index == 0 {
+		return fmt.Sprintf("%s-%s-%s-%s.jpg", date, time, m, key)
+	} else {
+		return fmt.Sprintf("%s-%s-%s-%s", date, time, m, key)
+	}
 }
