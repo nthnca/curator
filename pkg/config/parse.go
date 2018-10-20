@@ -30,7 +30,7 @@ func (config *Config) PhotoQueueBucket() string {
 	return config.instance.PhotoQueueBucket
 }
 
-// PhotoQueueBucket is the GCS bucket where photos are stored after they are processed.
+// PhotoStorageBucket is the GCS bucket where photos are stored after they are processed.
 func (config *Config) PhotoStorageBucket() string {
 	return config.instance.PhotoStorageBucket
 }
@@ -45,7 +45,7 @@ func (config *Config) MetadataBucket() string {
 	return config.instance.PhotoMetadataBucket
 }
 
-// MetadataBucket is the filename prefix for the photo metadata.
+// MetadataPath is the filename prefix for the photo metadata.
 func (config *Config) MetadataPath() string {
 	return config.instance.PhotoMetadataPath
 }
