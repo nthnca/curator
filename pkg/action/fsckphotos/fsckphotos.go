@@ -15,6 +15,7 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+// Do performs a system integrity check.
 func Do() {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
@@ -28,23 +29,32 @@ func Do() {
 	}
 
 	totalObjects := 0
+	wantedObjects := 0
 	extraObjects := 0
 	missingObjects := 0
-	wanted := make(map[string]bool)
+	wanted := make(map[string][]byte)
 	have := make(map[string]bool)
 
+	// What does the object store have.
 	os.ForEach(func(key string, value []byte) {
 		var m message.Media
 		if er := proto.Unmarshal(value, &m); er != nil {
 			log.Fatalf("Unmarshalling proto: %v", er)
 		}
+		if key != hex.EncodeToString(m.File[0].Sha256Sum) {
+			log.Fatalf("oops")
+		}
+		if key != hex.EncodeToString(m.Key) {
+			log.Fatalf("oops")
+		}
 		for _, f := range m.File {
 			name := hex.EncodeToString(f.Sha256Sum)
-			wanted[name] = true
-			totalObjects += 1
+			wanted[name] = f.Md5Sum
+			wantedObjects += 1
 		}
 	})
 
+	// Any storage entries that we didn't expect?
 	bkt := client.Bucket(config.PhotoStorageBucket())
 	for it := bkt.Objects(ctx, nil); ; {
 		obj, err := it.Next()
@@ -56,7 +66,13 @@ func Do() {
 		}
 
 		have[obj.Name] = true
-		if wanted[obj.Name] == false {
+		totalObjects += 1
+		check := wanted[obj.Name]
+		if len(check) > 0 {
+			if util.MD5(check) != util.MD5(obj.MD5) {
+				log.Fatalf("Ooops")
+			}
+		} else {
 			if extraObjects == 0 {
 				fmt.Printf("Extra Objects:\n")
 			}
@@ -71,38 +87,19 @@ func Do() {
 		}
 	}
 
-	del := [][]byte{}
-	os.ForEach(func(key string, value []byte) {
-		var m message.Media
-		if er := proto.Unmarshal(value, &m); er != nil {
-			log.Fatalf("Unmarshalling proto: %v", er)
-		}
-
-		flag := false
-		for _, f := range m.File {
-			name := hex.EncodeToString(f.Sha256Sum)
-			if have[name] == false {
-				flag = true
-			}
-		}
-
-		if !flag {
-			return
+	// Were any storage entries missing?
+	for k, v := range wanted {
+		if len(v) > 0 || have[k] {
+			continue
 		}
 
 		if missingObjects == 0 {
 			fmt.Printf("Missing objects:\n")
 		}
-		fmt.Printf("  %s\n", util.GetCanonicalName(&m))
-		del = append(del, m.Key)
-		for _, f := range m.File {
-			name := hex.EncodeToString(f.Sha256Sum)
-			fmt.Printf("    %s %v\n", name, have[name])
-			if have[name] == false {
-				missingObjects += 1
-			}
-		}
-	})
+
+		fmt.Printf("  %s\n", k)
+		missingObjects += 1
+	}
 
 	/*
 		        // Uncomment this if you want to delete Info relating to missing objects.
@@ -114,7 +111,7 @@ func Do() {
 	*/
 
 	log.Printf("Total Objects: %d", totalObjects)
+	log.Printf("Wanted Objects: %d", wantedObjects)
 	log.Printf("Extra Objects: %d", extraObjects)
 	log.Printf("Missing Objects: %d", missingObjects)
-
 }
