@@ -8,15 +8,15 @@ import (
 	"github.com/nthnca/curator/pkg/mediainfo"
 )
 
-// GetCanonicalName creates a standardize photo file name that looks like
-// <date>-<time>-<camera-model>-<filename>.jpg
-func GetCanonicalName(config *config.Config, media *mediainfo.Media) string {
+// GetCanonicalPhotoName creates a standardize photo file name for one of the specific photo
+// files that looks like <date>-<time>-<camera-model>-<filename>.jpg
+func GetCanonicalName(config *config.Config, media *mediainfo.Media, index int) string {
 	if media.Photo.Datetime == "" {
 		return media.Name
 	}
 	datetime := media.Photo.Datetime
 	model := media.Photo.Model
-	key := media.File[0].Filename
+	key := media.File[index].Filename
 	key = strings.TrimSuffix(key, ".jpg")
 	key = strings.TrimSuffix(key, ".JPG")
 	split := strings.Split(strings.Replace(datetime, ":", "", -1), " ")

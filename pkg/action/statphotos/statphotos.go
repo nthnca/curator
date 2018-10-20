@@ -54,7 +54,7 @@ func Do(opts *Options) error {
 	var ysize int64
 
 	for i, y := range arr {
-		name := util.GetCanonicalName(opts.Cfg, y)
+		name := util.GetCanonicalName(opts.Cfg, y, 0)
 		sort.Strings(y.Tags)
 
 		var size int64
@@ -70,7 +70,7 @@ func Do(opts *Options) error {
 		ycount++
 		ysize += size
 
-		if i+1 == len(arr) || name[:4] != util.GetCanonicalName(opts.Cfg, arr[i+1])[:4] {
+		if i+1 == len(arr) || name[:4] != util.GetCanonicalName(opts.Cfg, arr[i+1], 0)[:4] {
 			fmt.Printf("%s (%s)\n", name[:4], gb(ysize))
 			for k := range ytagcount {
 				fmt.Printf("  %s %d\n", k, ytagcount[k])

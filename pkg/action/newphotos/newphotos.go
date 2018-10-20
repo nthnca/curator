@@ -236,6 +236,7 @@ func (act *action) createMediaProto(files []*file) (*mediainfo.Media, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 	}
+	// fileinfo.Type = mediainfo.FileType_JPG
 
 	var media mediainfo.Media
 	media.File = append(media.File, fileinfo)
@@ -251,6 +252,7 @@ func (act *action) createMediaProto(files []*file) (*mediainfo.Media, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to retrieve file: %v", err)
 		}
+		// info.Type = mediainfo.FileType_RAW
 		media.File = append(media.File, info)
 		files[i].info = info
 	}

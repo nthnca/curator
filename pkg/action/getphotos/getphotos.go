@@ -56,18 +56,22 @@ func Do(opts *Options) error {
 			log.Fatalf("Unmarshalling proto: %v", er)
 		}
 
-		iter := m
-		if !opts.Tags.Match(iter.Tags) {
+		if !opts.Tags.Match(m.Tags) {
 			return
 		}
 
-		name := util.GetCanonicalName(opts.Cfg, &iter)
+		name := util.GetCanonicalName(opts.Cfg, &m, 0)
 		if opts.Filter != "" && opts.Filter != name[:len(opts.Filter)] {
 			return
 		}
 
 		count++
-		fmt.Printf("%s %s\n", hex.EncodeToString(iter.Key), name)
+
+		for i, f := range m.File {
+			name := util.GetCanonicalName(opts.Cfg, &m, i)
+			fmt.Printf("%s %s\n", hex.EncodeToString(f.Sha256Sum), name)
+			break
+		}
 	})
 
 	log.Printf("Photos retrieved: %d", count)
