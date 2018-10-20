@@ -160,7 +160,7 @@ func (act *action) processPhotoSet(files []*file) error {
 
 	err = act.deleteFiles(files)
 	if err != nil {
-		return fmt.Errorf("Failed to delete files: %v", err)
+		log.Printf("Failed to delete files: %v", err)
 	}
 	return nil
 }
