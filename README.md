@@ -16,6 +16,32 @@ Other features of this system:
 - If you want, it is easy to add new features, and interact with it in a more programmatic manner than most other photo systems.
 
 
+## Getting Started:
+
+### Set up 3 GCS buckets
+
+- One bucket will be used for storing all your photos. This bucket should have very restrictive write access to it, potentially only a single service account that "curator" will run under. Read access to this bucket can be more widely held. A potential name could be `myname-photo-storage`.
+- One bucket will be used to store all the metadata for your photos. Access to this bucket should likely duplicate that of the previous bucket. A potential name could be `myname-photo-metadata`.
+- One bucket will be used to add new photos. Any system that you use to add photos to this bucket will need read and write access to this bucket. As well as the curator process will need read and write access.  A potential name could be `myname-new-photos`.
+
+### Install imagemagick
+
+- `sudo apt-get install imagemagick` works for me, depending on what type of system you are on you may need to do something else.
+
+### Install, configure, and run curator
+
+- `go get -u github.com/nthnca/curator`
+- `curator config > curator_config`
+- edit the `curator_config` file. Add your buckets and other configuration settings you need. 
+- `export CONFIG_FILE=$PWD/curator_config
+- `curator new`
+
+### Add photos
+
+At this point any files you copy into `myname-new-photos` will be processed and added to your photo-storage bucket with some metadata being stored to your photo-metadata bucket.
+
+
+
 ## Basic Workflow
 
 1. Add new photos into a Google cloud storage bucket.
