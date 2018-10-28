@@ -34,29 +34,10 @@ Other features of this system:
 - `curator config > curator_config`
 - edit the `curator_config` file. Add your buckets and other configuration settings you need. 
 - `export CONFIG_FILE=$PWD/curator_config
-- `curator new`
+- add your photos into your `myname-new-photos` bucket. You can do this with command line tools like gsutil or through the google cloud console from your webbrowser.
+- Run `curator new` this will process each of the files you added to your `myname-new-photos` bucket. It will copy the file into your `myname-photo-storage` bucket, add some metadata into your `myname-photo-metadata` bucket, and then delete the photo from your `myname-new-photos` bucket.
+- continue adding and processing more photos or run one of the various curator commands listed below to interact with the various photos you have already added. Enjoy!  :-)
 
-### Add photos
-
-At this point any files you copy into `myname-new-photos` will be processed and added to your photo-storage bucket with some metadata being stored to your photo-metadata bucket.
-
-
-
-## Basic Workflow
-
-1. Add new photos into a Google cloud storage bucket.
-2. Run the curator "new" command. (This will process each of your photos, create some metadata for each of them and move your photo from the above storage location into the main storage area.)
-3. Use various curator commands to tag, view, and generally organize your photos.
-
-## Setup
-
-1. Create 3 Google cloud storage buckets. These three buckets are for:
-  - Staging area where new photos can be copied to.
-  - Photo repository. This bucket can be locked down so only your curator process has access to write to it.
-  - Photo metadata.  This bucket can be locked down so only your curator process has access to write to it.
-2. Create a config file. (It will list the 3 buckets you set up, the tags you want to use, and some mappings of camera names to abbreviations.
-3. Build the curator binary.
-4. Your ready to go ... follow the workflow listed above ... use the curator commands detailed below.
 
 ## curator Commands:
 
