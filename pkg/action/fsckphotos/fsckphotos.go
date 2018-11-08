@@ -52,9 +52,6 @@ func Do(opts *Options) error {
 		if key != hex.EncodeToString(m.File[0].Sha256Sum) {
 			log.Fatalf("oops")
 		}
-		if key != hex.EncodeToString(m.Key) {
-			log.Fatalf("oops")
-		}
 		for _, f := range m.File {
 			name := hex.EncodeToString(f.Sha256Sum)
 			wanted[name] = f.Md5Sum

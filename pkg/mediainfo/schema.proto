@@ -6,9 +6,6 @@ package mediainfo;
 // example (.jpg, .raw, .mp4, etc) that have different resolutions or image
 // quality for the same image.
 message Media {
-  // This is the "key" that you can use to refer to this image.
-  bytes key = 1;
-
   // Metadata for the image.
   PhotoInfo photo = 3;
 

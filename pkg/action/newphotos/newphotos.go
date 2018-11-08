@@ -201,7 +201,7 @@ func (act *action) insertMetadata(metadata *mediainfo.Media) error {
 			return fmt.Errorf("Failed to marshal proto: %v", err)
 		}
 
-		err = act.store.Insert(act.ctx, hex.EncodeToString(metadata.Key), data)
+		err = act.store.Insert(act.ctx, hex.EncodeToString(metadata.File[0].Sha256Sum), data)
 		if err != nil {
 			return fmt.Errorf("Attempting insert: %v", err)
 		}
@@ -256,7 +256,6 @@ func (act *action) createMediaProto(files []*file) (*mediainfo.Media, error) {
 		files[i].info = info
 	}
 
-	media.Key = media.File[0].Sha256Sum
 	media.Tags = []string{"new"}
 
 	return &media, nil
