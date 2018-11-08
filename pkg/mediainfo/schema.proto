@@ -9,11 +9,6 @@ message Media {
   // This is the "key" that you can use to refer to this image.
   bytes key = 1;
 
-  // This is the timestamp of when this Media object was last modified. When
-  // you modify a media object, don't modify the current one, but just add a
-  // new one with a new timestamp.
-  int64 timestamp_seconds = 2;
-
   // Metadata for the image.
   PhotoInfo photo = 3;
 

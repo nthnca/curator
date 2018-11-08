@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
@@ -258,7 +257,6 @@ func (act *action) createMediaProto(files []*file) (*mediainfo.Media, error) {
 	}
 
 	media.Key = media.File[0].Sha256Sum
-	media.TimestampSeconds = time.Now().Unix()
 	media.Tags = []string{"new"}
 
 	return &media, nil

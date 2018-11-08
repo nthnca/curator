@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
@@ -96,8 +95,6 @@ func mutate(mi *objectstore.ObjectStore, objs map[string][]byte, line string, ta
 
 	p1.Tags, changed = tags.Modify(p1.Tags)
 	if changed {
-		p1.TimestampSeconds = time.Now().Unix()
-
 		data, err := proto.Marshal(&p1)
 		if err != nil {
 			log.Fatalf("Failed to marshal proto")
