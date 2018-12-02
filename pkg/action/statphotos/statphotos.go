@@ -33,27 +33,27 @@ type Options struct {
 func Do(opts *Options) error {
 	os := opts.ObjStore
 
-	var arr []*mediainfo.Media
+	var all []*mediainfo.Media
 	os.ForEach(func(key string, value []byte) {
 		var m mediainfo.Media
 		if er := proto.Unmarshal(value, &m); er != nil {
 			log.Fatalf("Unmarshalling proto: %v", er)
 		}
-		arr = append(arr, &m)
+		all = append(all, &m)
 	})
 
-	sort.Slice(arr, func(i, j int) bool {
-		return arr[i].Photo.TimestampSeconds < arr[j].Photo.TimestampSeconds
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].Photo.TimestampSeconds < all[j].Photo.TimestampSeconds
 	})
 
-	tagcount := make(map[string]int)
+	totaltagcount := make(map[string]int)
 	var totalsize int64
 
 	ycount := 0
 	ytagcount := make(map[string]int)
 	var ysize int64
 
-	for i, y := range arr {
+	for i, y := range all {
 		name := util.GetCanonicalName(opts.Cfg, y, 0)
 		sort.Strings(y.Tags)
 
@@ -63,16 +63,21 @@ func Do(opts *Options) error {
 		}
 
 		k := fmt.Sprintf("%s", y.Tags)
-		tagcount[k] = tagcount[k] + 1
+		totaltagcount[k] = totaltagcount[k] + 1
 		totalsize += size
 
 		ytagcount[k] = ytagcount[k] + 1
 		ycount++
 		ysize += size
 
-		if i+1 == len(arr) || name[:4] != util.GetCanonicalName(opts.Cfg, arr[i+1], 0)[:4] {
+		if i+1 == len(all) || name[:4] != util.GetCanonicalName(opts.Cfg, all[i+1], 0)[:4] {
 			fmt.Printf("%s (%s)\n", name[:4], gb(ysize))
+			var taglist []string
 			for k := range ytagcount {
+				taglist = append(taglist, k)
+			}
+			sort.Strings(taglist)
+			for k := range taglist {
 				fmt.Printf("  %s %d\n", k, ytagcount[k])
 			}
 
@@ -83,8 +88,8 @@ func Do(opts *Options) error {
 	}
 
 	fmt.Printf("Totals (%s)\n", gb(totalsize))
-	for k := range tagcount {
-		fmt.Printf("  %s %d\n", k, tagcount[k])
+	for k := range totaltagcount {
+		fmt.Printf("  %s %d\n", k, totaltagcount[k])
 	}
 	return nil
 }
