@@ -9,8 +9,7 @@ echo
 sleep 3
 echo "PROCEEDING to copy and delete"
 
-function foo() {
-  echo PWD `pwd`
+function process_curr_dir() {
   for file in *; do
     if [[ "$file" == *jpg ]] || [[ "$file" == *JPG ]]; then
       d="$DEST"
@@ -51,7 +50,7 @@ for a in 0 1; do
   for dir in *; do
     if [ -d "$dir" ]; then
       cd "$dir"
-      foo
+      process_curr_dir
       cd ..
     fi
   done
