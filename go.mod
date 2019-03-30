@@ -5,4 +5,5 @@ require (
 	github.com/golang/protobuf v1.3.1
 	github.com/nthnca/object-store v0.2.0
 	google.golang.org/api v0.3.0
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
